@@ -1,0 +1,97 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /* ================= HELPERS ================= */
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return request.auth != null && 
+        (request.auth.token.email.lower() == 'admin@perfume.com' || 
+         request.auth.token.email.lower() == 'admin@mahirash.com' ||
+         request.auth.token.email.lower() == 'mahirashperfumes@gmail.com');
+    }
+
+    /* ================= SITE CONFIG (VIDEOS / BANNERS) ================= */
+    // Used by homepage + AdminDashboard
+    match /siteConfig/{docId} {
+      allow read: if true;       // public homepage access
+      allow write: if isAdmin(); // admin upload/update
+    }
+
+    /* ================= METADATA (CUSTOM LISTS) ================= */
+    // Stores brands, categories, and fragrance notes
+    match /metadata/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    /* ================= CARTS ================= */
+    match /carts/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    /* ================= WISHLISTS ================= */
+    match /wishlists/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    /* ================= USERS ================= */
+    match /users/{userId} {
+      allow read, write: if isOwner(userId) || isAdmin();
+    }
+
+    /* ================= ORDERS ================= */
+    match /orders/{orderId} {
+
+      // User reads only their own orders
+      allow read: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+
+      // Admin reads ALL orders
+      allow read: if isAdmin();
+
+      // User creates their own order
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid;
+
+      // Admin updates order status, tracking, etc
+      allow update: if isAdmin();
+
+       // ✅ Admin can delete orders
+      allow delete: if isAdmin();
+    }
+
+    /* ================= PRODUCTS ================= */
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    /* ================= ANNOUNCEMENTS ================= */
+    match /announcements/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    /* ================= REVIEWS ================= */
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+    }
+
+    /* ================= FALLBACK (DENY ALL) ================= */
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
