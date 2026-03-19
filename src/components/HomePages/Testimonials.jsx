@@ -112,7 +112,7 @@ const WatchAndBuy = () => {
 
                   {/* "Shop Now" Hover Overlay */}
                   <div className="absolute inset-0 bg-black/20 opacity-0 hover:opacity-100 transition-opacity flex items-end p-4 z-20">
-                    <button className="w-full bg-white py-3 text-[11px] uppercase tracking-widest font-bold text-black border-none cursor-pointer">
+                    <button className="w-full bg-white py-3 text-[14px] uppercase tracking-widest font-bold text-black border-none cursor-pointer">
                       Shop the Look
                     </button>
                   </div>

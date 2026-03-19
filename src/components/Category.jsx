@@ -548,7 +548,7 @@ const Category = () => {
 
         <button
           onClick={clearAllFilters}
-          className="w-full mt-6 py-3 border border-[#454545] text-[11px] font-medium uppercase tracking-[0.25em]
+          className="w-full mt-6 py-3 border border-[#454545] text-[14px] font-medium uppercase tracking-[0.25em]
           flex items-center justify-center text-[#454545] hover:bg-[#454545] hover:text-white
           transition-all duration-300"
         >
@@ -642,17 +642,17 @@ const Category = () => {
                           {sizeInfo.oldPrice ? (
                             <>
                               <div className="flex items-center gap-2">
-                                <span className="text-[11px] text-[#999] uppercase tracking-wider">Regular price</span>
+                                <span className="text-[14px] text-[#999] uppercase tracking-wider">Regular price</span>
                                 <span className="text-[13px] text-[#999] line-through">₹{formatPrice(sizeInfo.oldPrice)}</span>
                               </div>
                               <div className="flex items-center gap-2">
-                                <span className="text-[11px] text-[#454545] uppercase tracking-wider">Sale price</span>
+                                <span className="text-[14px] text-[#454545] uppercase tracking-wider">Sale price</span>
                                 <span className="text-[14px] font-semibold text-[#454545]">From ₹{formatPrice(sizeInfo.price)}</span>
                               </div>
                             </>
                           ) : (
                             <div className="flex items-center gap-2">
-                              <span className="text-[11px] text-[#454545] uppercase tracking-wider">Regular price</span>
+                              <span className="text-[14px] text-[#454545] uppercase tracking-wider">Regular price</span>
                               <span className="text-[14px] font-semibold text-[#454545]">From ₹{formatPrice(sizeInfo.price)}</span>
                             </div>
                           )}

@@ -418,7 +418,7 @@ function ProductDetails() {
                 <div className="absolute inset-0 bg-white/60 backdrop-blur-[4px] flex items-center justify-center pointer-events-none">
                   <div className="flex flex-col items-center gap-4">
                     <div className="w-16 h-px bg-neutral-900/20"></div>
-                    <span className="px-10 py-4 bg-neutral-900 text-white text-[11px] font-black uppercase tracking-[0.5em] rounded-full shadow-2xl">Currently Unavailable</span>
+                    <span className="px-10 py-4 bg-neutral-900 text-white text-[14px] font-black uppercase tracking-[0.5em] rounded-full shadow-2xl">Currently Unavailable</span>
                     <div className="w-16 h-px bg-neutral-900/20"></div>
                   </div>
                 </div>
@@ -511,11 +511,11 @@ function ProductDetails() {
                 {/* Header */}
                 <div className="flex justify-between items-center border-b border-neutral-100 pb-3">
 
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.35em] text-neutral-500">
+                  <span className="text-[14px] font-semibold uppercase tracking-[0.35em] text-neutral-500">
                     Select Volume
                   </span>
 
-                  <span className="text-[11px] uppercase tracking-[0.35em] text-neutral-300">
+                  <span className="text-[14px] uppercase tracking-[0.35em] text-neutral-300">
                     {sizesArr.length} Editions
                   </span>
 
@@ -779,7 +779,7 @@ function ProductDetails() {
       <section className="bg-white py-14 border-t border-neutral-100">
         <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
           <div className="flex flex-col items-center text-center space-y-4 mb-16">
-            <span className="text-[11px] font-black text-[#640d14] uppercase tracking-[0.6em]">Testimonials</span>
+            <span className="text-[14px] font-black text-[#640d14] uppercase tracking-[0.6em]">Testimonials</span>
             <h2 className="text-3xl md:text-4xl font-serif text-neutral-900 uppercase tracking-[0.2em]">Customer Reflections</h2>
             <div className="w-16 h-px bg-gradient-to-r from-transparent via-[#640d14]/20 to-transparent"></div>
             <p className="text-neutral-400 text-[10px] uppercase tracking-[0.3em] font-bold">Total Reviews: ({reviews.length})</p>
@@ -835,7 +835,7 @@ function ProductDetails() {
 
         <div className="max-w-[1400px] mx-auto px-6 relative z-10">
           <div className="flex flex-col items-center text-center space-y-4 mb-20">
-            <span className="text-[11px] font-black text-[#640d14] uppercase tracking-[0.6em]">Recommended</span>
+            <span className="text-[14px] font-black text-[#640d14] uppercase tracking-[0.6em]">Recommended</span>
             <h2 className="text-3xl md:text-4xl font-serif text-neutral-900 uppercase tracking-[0.2em]">The Curation</h2>
             <div className="w-16 h-px bg-gradient-to-r from-transparent via-[#640d14]/20 to-transparent"></div>
           </div>
@@ -864,7 +864,7 @@ function ProductDetails() {
                       <p className="text-[9px] font-black text-[#640d14] uppercase tracking-[0.4em] opacity-50">{p.brand}</p>
                       <h3 className="text-[12px] font-serif text-neutral-900 group-hover:text-[#640d14] transition-colors duration-500 uppercase tracking-widest truncate px-4">{p.name}</h3>
                       <div className="flex items-center justify-center gap-3">
-                        <span className="text-[11px] font-black text-neutral-900">₹{formatPrice(rPrice)}</span>
+                        <span className="text-[14px] font-black text-neutral-900">₹{formatPrice(rPrice)}</span>
                       </div>
                     </div>
                   </Link>
@@ -884,7 +884,7 @@ function ProductDetails() {
               <img src={selectedImage} alt={product.name} className="w-full h-full object-contain p-1" />
             </div>
             <div className="min-w-0">
-              <h4 className="text-[11px] font-black uppercase tracking-widest text-neutral-900 truncate">{product.name}</h4>
+              <h4 className="text-[14px] font-black uppercase tracking-widest text-neutral-900 truncate">{product.name}</h4>
               <p className="text-[10px] font-bold text-[#640d14] tracking-wider">₹{formatPrice(selectedSize.price)}</p>
             </div>
           </div>
@@ -915,7 +915,7 @@ function ProductDetails() {
               <button
                 onClick={handleAddToCart}
                 disabled={(!isPreOrder && (isSelectedSizeOut || isAlreadyInCart)) || buttonLoading}
-                className={`flex-1 md:w-44 h-11 rounded-sm text-[11px] font-bold uppercase tracking-[0.2em] transition-all duration-300 flex items-center justify-center gap-2
+                className={`flex-1 md:w-44 h-11 rounded-sm text-[14px] font-bold uppercase tracking-[0.2em] transition-all duration-300 flex items-center justify-center gap-2
                   ${isPreOrder ? "bg-amber-600/10 text-amber-700 border border-amber-600/20 hover:bg-amber-600/20 shadow-lg shadow-amber-600/5" : (isSelectedSizeOut || isAlreadyInCart ? "bg-neutral-100 text-neutral-400" : "bg-neutral-900 text-white hover:bg-[#640d14]")}`}
               >
                 {buttonLoading ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : (isPreOrder ? <i className="fab fa-whatsapp"></i> : <MdShoppingCart />)}
@@ -926,7 +926,7 @@ function ProductDetails() {
                 <button
                   onClick={handleBuyNow}
                   disabled={buyNowLoading}
-                  className="flex-1 md:w-44 h-11 bg-[#640d14] text-white rounded-sm text-[11px] font-bold uppercase tracking-[0.2em] hover:bg-black transition-all flex items-center justify-center gap-2 shadow-lg"
+                  className="flex-1 md:w-44 h-11 bg-[#640d14] text-white rounded-sm text-[14px] font-bold uppercase tracking-[0.2em] hover:bg-black transition-all flex items-center justify-center gap-2 shadow-lg"
                 >
                   {buyNowLoading ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <MdFlashOn className="text-sm" />}
                   <span>Buy It Now</span>

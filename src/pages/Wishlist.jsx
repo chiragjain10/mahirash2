@@ -130,7 +130,7 @@ function Wishlist() {
     <div className="min-h-screen bg-white">
       {/* Header Section */}
       <div className="bg-gray-50/50 border-b border-gray-100 py-12 md:py-20">
-        <div className="px-4 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="px-4 flex flex-col md:flex-row md:items-center justify-between gap-6 max-w-[1400px] mx-auto">
           <div>
             <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight mb-2">My Wishlist</h1>
             <p className="text-gray-500 font-medium">
@@ -151,7 +151,7 @@ function Wishlist() {
       </div>
 
       {/* Wishlist Content */}
-      <div className="px-4 py-12">
+      <div className="px-4 py-12 max-w-[1400px] mx-auto">
         {wishlistItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center text-5xl mb-6 opacity-50">💝</div>

@@ -177,7 +177,7 @@ function NewArrivalsPage() {
     <div className="na-container bg-white min-h-screen">
       {/* Hero Section */}
       <div className="pt-24 pb-12 text-center px-4 border-b border-neutral-100">
-        <span className="text-[11px] text-[#999] uppercase tracking-[0.3em] font-medium mb-3 block">Premium Selection</span>
+        <span className="text-[14px] text-[#999] uppercase tracking-[0.3em] font-medium mb-3 block">Premium Selection</span>
         <h1 className="text-4xl md:text-5xl font-light text-[#454545] uppercase tracking-[0.2em] mb-8">New Arrivals</h1>
       </div>
 
@@ -187,7 +187,7 @@ function NewArrivalsPage() {
           {genders.map(g => (
             <button
               key={g}
-              className={`px-6 py-2 text-[11px] uppercase tracking-[0.2em] transition-all duration-300 ${selectedGender === g ? 'bg-[#454545] text-white' : 'bg-transparent text-[#454545] border border-neutral-200 hover:border-[#454545]'}`}
+              className={`px-6 py-2 text-[14px] uppercase tracking-[0.2em] transition-all duration-300 ${selectedGender === g ? 'bg-[#454545] text-white' : 'bg-transparent text-[#454545] border border-neutral-200 hover:border-[#454545]'}`}
               onClick={() => setSelectedGender(g)}
             >
               {g === 'all' ? 'All' : g}
@@ -261,17 +261,17 @@ function NewArrivalsPage() {
                       {sizeInfo.oldPrice ? (
                         <>
                           <div className="flex items-center gap-2">
-                            <span className="text-[11px] text-[#999] uppercase tracking-wider">Regular price</span>
+                            <span className="text-[14px] text-[#999] uppercase tracking-wider">Regular price</span>
                             <span className="text-[13px] text-[#999] line-through">₹{formatPrice(sizeInfo.oldPrice)}</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-[11px] text-[#454545] uppercase tracking-wider">Sale price</span>
+                            <span className="text-[14px] text-[#454545] uppercase tracking-wider">Sale price</span>
                             <span className="text-[14px] font-semibold text-[#454545]">From ₹{formatPrice(sizeInfo.price)}</span>
                           </div>
                         </>
                       ) : (
                         <div className="flex items-center gap-2">
-                          <span className="text-[11px] text-[#454545] uppercase tracking-wider">Regular price</span>
+                          <span className="text-[14px] text-[#454545] uppercase tracking-wider">Regular price</span>
                           <span className="text-[14px] font-semibold text-[#454545]">From ₹{formatPrice(sizeInfo.price)}</span>
                         </div>
                       )}

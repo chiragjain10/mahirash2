@@ -186,6 +186,14 @@ function BestSellers({ onQuickView }) {
         <div className="section-title">
           <span>Most Wanted</span>
           <h2>Best Sellers</h2>
+          <div className="mt-8 flex justify-center">
+            <button 
+              onClick={() => navigate('/category')}
+              className="bg-[#640d14] text-white px-8 py-2.5 text-[14px] uppercase tracking-[0.2em] font-medium hover:bg-black transition-all duration-300"
+            >
+              VIEW ALL
+            </button>
+          </div>
         </div>
 
         <div 
@@ -222,7 +230,7 @@ function BestSellers({ onQuickView }) {
                   )}
 
                   {/* Quick View Button (Task 6) */}
-                  <div className="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 z-20">
+                  <div className="absolute inset-x-0 bottom-0 p-4 translate-y-full lg:group-hover:translate-y-0 transition-transform duration-300 z-20">
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
@@ -233,6 +241,15 @@ function BestSellers({ onQuickView }) {
                       Quick View
                     </button>
                   </div>
+                  
+                  {/* Mobile Quick View Overlay (Task 6) */}
+                  <div 
+                    className="lg:hidden absolute inset-0 z-10 bg-black/5 opacity-0 active:opacity-100 transition-opacity"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onQuickView) onQuickView(product);
+                    }}
+                  />
 
                   {/* Wishlist Action */}
                   <div className="absolute top-4 right-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -253,17 +270,17 @@ function BestSellers({ onQuickView }) {
                     {sizeInfo.oldPrice ? (
                       <>
                         <div className="flex items-center gap-2">
-                          <span className="text-[11px] text-[#999] uppercase tracking-wider">Regular price</span>
+                          <span className="text-[14px] text-[#999] uppercase tracking-wider">Regular price</span>
                           <span className="text-[13px] text-[#999] line-through">₹{formatPrice(sizeInfo.oldPrice)}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-[11px] text-[#454545] uppercase tracking-wider">Sale price</span>
+                          <span className="text-[14px] text-[#454545] uppercase tracking-wider">Sale price</span>
                           <span className="text-[14px] font-semibold text-[#454545]">From ₹{formatPrice(sizeInfo.price)}</span>
                         </div>
                       </>
                     ) : (
                       <div className="flex items-center gap-2">
-                        <span className="text-[11px] text-[#454545] uppercase tracking-wider">Regular price</span>
+                        <span className="text-[14px] text-[#454545] uppercase tracking-wider">Regular price</span>
                         <span className="text-[14px] font-semibold text-[#454545]">From ₹{formatPrice(sizeInfo.price)}</span>
                       </div>
                     )}
@@ -279,19 +296,6 @@ function BestSellers({ onQuickView }) {
               </div>
             );
           })}
-        </div>
-
-        {/* Mobile "Explore All" Button */}
-        <div className="mt-8 flex justify-center md:hidden">
-          <button 
-            onClick={() => navigate('/category')}
-            className="w-full max-w-[280px] py-4 bg-neutral-900 text-white rounded-2xl text-[11px] font-bold uppercase tracking-[0.2em] shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-          >
-            Explore All Collection
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
         </div>
       </div>
     </section>

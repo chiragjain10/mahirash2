@@ -34,7 +34,7 @@ const PerfumeInfinityBanner = () => {
           >
             <span className="text-xl">{item.icon}</span>
 
-            <span className="text-[11px] font-medium uppercase tracking-[0.3em]">
+            <span className="text-[14px] font-medium uppercase tracking-[0.3em]">
               {item.text}
             </span>
 

@@ -94,10 +94,16 @@ const HeroVideo = () => {
           .premium-hero {
             position: relative;
             width: 100%;
-            height: 55vh;
+            height: 100vh;
             overflow: hidden;
             background: #000;
             transition: opacity 1s ease-in-out;
+          }
+          
+          @media (min-width: 992px) {
+            .premium-hero {
+              height: 55vh;
+            }
           }
           .is-hidden { opacity: 0; }
           .is-visible { opacity: 1; }

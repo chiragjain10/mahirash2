@@ -352,7 +352,18 @@
 }
 
 .animate-marquee {
-  animation: marquee 15s linear infinite;
+  animation: marquee 8s linear infinite;
+}
+
+/* Interactive Buy Now Button Animation (Task) */
+@keyframes buyNowPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.buy-now-pulse {
+  animation: buyNowPulse 2s ease-in-out infinite;
 }
 
 /* Global Section Styling */

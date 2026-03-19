@@ -216,7 +216,7 @@ function QuickView({ product, onClose }) {
                         {/* Brand & Name */}
                         <div className="space-y-4">
                             <div className="flex items-center gap-3">
-                                <span className="text-[11px] font-bold text-[#640d14] uppercase tracking-[0.45em]">{product.brand}</span>
+                                <span className="text-[14px] font-bold text-[#640d14] uppercase tracking-[0.45em]">{product.brand}</span>
                                 {product.note && (
                                     <>
                                         <div className="w-px h-3 bg-neutral-200" />
@@ -224,11 +224,11 @@ function QuickView({ product, onClose }) {
                                     </>
                                 )}
                             </div>
-                            <h2 className="text-3xl md:text-4xl font-serif text-neutral-900 uppercase tracking-tight leading-tight">{product.name}</h2>
+                            <h2 className="text-xl md:text-4xl font-serif text-neutral-900 uppercase tracking-tight leading-tight">{product.name}</h2>
                             <div className="flex items-baseline gap-5">
-                                <span className="text-3xl font-light italic text-neutral-900">₹{formatPrice(selectedSize.price)}</span>
+                                <span className="text-xl md:text-3xl font-light italic text-neutral-900">₹{formatPrice(selectedSize.price)}</span>
                                 {selectedSize.oldPrice && (
-                                    <span className="text-[15px] text-neutral-400 line-through font-light">₹{formatPrice(selectedSize.oldPrice)}</span>
+                                    <span className="text-[12px] md:text-[15px] text-neutral-400 line-through font-light">₹{formatPrice(selectedSize.oldPrice)}</span>
                                 )}
                             </div>
                         </div>
@@ -255,8 +255,8 @@ function QuickView({ product, onClose }) {
                         {sizesArr.length > 0 && (
                             <div className="space-y-4">
                                 <div className="flex justify-between items-center border-b border-neutral-100 pb-3">
-                                    <span className="text-[11px] font-bold uppercase tracking-[0.35em] text-neutral-400">Select Edition</span>
-                                    <span className="text-[11px] font-bold text-neutral-300 uppercase tracking-[0.3em]">{sizesArr.length} Variations</span>
+                                    <span className="text-[14px] font-bold uppercase tracking-[0.35em] text-neutral-400">Select Edition</span>
+                                    <span className="text-[14px] font-bold text-neutral-300 uppercase tracking-[0.3em]">{sizesArr.length} Variations</span>
                                 </div>
                                 <div className="grid grid-cols-3 gap-3">
                                     {sizesArr.map((sz, idx) => (
@@ -286,7 +286,7 @@ function QuickView({ product, onClose }) {
                                 <button
                                     onClick={handleAddToCart}
                                     disabled={(!isPreOrder && (isSelectedSizeOut || isAlreadyInCart)) || buttonLoading}
-                                    className={`flex-1 rounded-sm flex items-center justify-center gap-3 text-[12px] font-bold uppercase tracking-[0.35em] transition-all duration-500 ${isPreOrder ? 'bg-amber-600/10 text-amber-700 border border-amber-600/20 hover:bg-amber-600/20 shadow-lg shadow-amber-600/5' : (isSelectedSizeOut || isAlreadyInCart ? 'bg-neutral-100 text-neutral-400 cursor-not-allowed' : 'bg-neutral-900 text-white hover:bg-[#640d14] shadow-xl')}`}
+                                    className={`flex-1 rounded-sm flex items-center justify-center gap-2 md:gap-3 text-[10px] md:text-[12px] font-bold uppercase tracking-[0.15em] md:tracking-[0.35em] transition-all duration-500 ${isPreOrder ? 'bg-amber-600/10 text-amber-700 border border-amber-600/20 hover:bg-amber-600/20 shadow-lg shadow-amber-600/5' : (isSelectedSizeOut || isAlreadyInCart ? 'bg-neutral-100 text-neutral-400 cursor-not-allowed' : 'bg-neutral-900 text-white hover:bg-[#640d14] shadow-xl')}`}
                                 >
                                     {buttonLoading ? (
                                         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -302,12 +302,12 @@ function QuickView({ product, onClose }) {
                                 <WishlistButton product={product} size="medium" className="!rounded-sm !h-14 !w-14 flex-shrink-0 border border-neutral-200 hover:border-[#640d14] transition-all" />
                             </div>
 
-                            {/* Buy Now */}
+            {/* Buy Now */}
                             {!isAlreadyInCart && !isSelectedSizeOut && !isPreOrder && (
                                 <button
                                     onClick={handleBuyNow}
                                     disabled={buyNowLoading}
-                                    className="w-full h-14 bg-[#640d14] text-white uppercase tracking-[0.35em] text-[12px] font-bold flex items-center justify-center gap-3 group transition-all duration-500 shadow-lg hover:shadow-xl rounded-sm"
+                                    className="w-full h-12 md:h-14 bg-[#640d14] text-white uppercase tracking-[0.2em] md:tracking-[0.35em] text-[10px] md:text-[12px] font-bold flex items-center justify-center gap-3 group transition-all duration-500 shadow-lg hover:shadow-xl rounded-sm buy-now-pulse"
                                 >
                                     {buyNowLoading ? (
                                         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

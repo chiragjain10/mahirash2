@@ -701,7 +701,7 @@ const UploadItemForm = ({ onUploadSuccess, editProduct }) => {
             disabled={isUploading}
             className={`
     relative flex items-center justify-center gap-3 h-12 px-8 rounded-lg 
-    text-[11px] font-bold uppercase tracking-widest transition-all duration-300
+    text-[14px] font-bold uppercase tracking-widest transition-all duration-300
     ${isUploading
                 ? 'bg-neutral-100 text-neutral-400 cursor-not-allowed'
                 : 'bg-neutral-900 text-white hover:bg-neutral-800 active:bg-black shadow-sm'

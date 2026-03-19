@@ -183,7 +183,7 @@ function BannerFresh({ onQuickView }) {
           </div>
           <button 
             onClick={() => navigate('/category')}
-            className="hidden md:block text-[11px] uppercase tracking-[0.2em] font-bold text-neutral-400 hover:text-black transition-colors"
+            className="hidden md:block text-[14px] uppercase tracking-[0.2em] font-bold text-neutral-400 hover:text-black transition-colors"
           >
             Explore All Collection →
           </button>
@@ -259,7 +259,7 @@ function BannerFresh({ onQuickView }) {
                     </div>
 
                     {sizeInfo.size && (
-                      <div className="text-[11px] text-neutral-500 uppercase tracking-widest font-medium">Size: {sizeInfo.size}</div>
+                      <div className="text-[14px] text-neutral-500 uppercase tracking-widest font-medium">Size: {sizeInfo.size}</div>
                     )}
 
                     {availableSizes.length > 0 && (
@@ -273,14 +273,14 @@ function BannerFresh({ onQuickView }) {
                     )}
 
                     {sizeInfo.isPreOrder ? (
-                      <div className="w-full py-3.5 rounded-2xl text-[11px] font-bold uppercase tracking-[0.25em] bg-amber-600/10 text-amber-700 text-center border border-amber-600/20">
+                      <div className="w-full py-3.5 rounded-2xl text-[14px] font-bold uppercase tracking-[0.25em] bg-amber-600/10 text-amber-700 text-center border border-amber-600/20">
                         Pre-Order
                       </div>
                     ) : (
                       <button
                         onClick={(e) => handleAddToCart(e, product)}
                         disabled={isOutOfStock(product) || loadingAddToCart === product.id || isInCart(product.id, getSelectedSize(product)?.size || product.size || '')}
-                        className={`group relative w-full py-3.5 rounded-2xl text-[11px] font-bold uppercase tracking-[0.25em]
+                        className={`group relative w-full py-3.5 rounded-2xl text-[14px] font-bold uppercase tracking-[0.25em]
                         flex items-center justify-center transition-all duration-300 overflow-hidden shadow-lg
                         ${isOutOfStock(product) || isInCart(product.id, getSelectedSize(product)?.size || product.size || '')
                             ? "bg-neutral-100 text-neutral-400 cursor-not-allowed shadow-none"
@@ -307,7 +307,7 @@ function BannerFresh({ onQuickView }) {
         <div className="mt-8 flex justify-center md:hidden">
           <button 
             onClick={() => navigate('/category')}
-            className="w-full max-w-[280px] py-4 bg-neutral-900 text-white rounded-2xl text-[11px] font-bold uppercase tracking-[0.2em] shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+            className="w-full max-w-[280px] py-4 bg-neutral-900 text-white rounded-2xl text-[14px] font-bold uppercase tracking-[0.2em] shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-2 d-md-none"
           >
             Explore All Collection
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

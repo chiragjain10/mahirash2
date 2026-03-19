@@ -42,7 +42,7 @@ const FullScreenBanner = () => {
 
   return (
     <section className="bg-white">
-      <div className="px-4">
+      <div className="">
         <div 
           onClick={handleClick} 
           className="block overflow-hidden rounded-2xl shadow-sm cursor-pointer"
@@ -50,7 +50,7 @@ const FullScreenBanner = () => {
           <img 
             src={imageUrl} 
             alt="Mahirash Perfume Banner" 
-            className="w-full h-auto object-cover hover:scale-[1.01] transition-transform duration-700"
+            className="w-full h-[50vh] object-cover hover:scale-[1.01] transition-transform duration-700"
           />
         </div>
       </div>

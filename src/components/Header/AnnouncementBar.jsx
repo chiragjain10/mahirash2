@@ -33,7 +33,7 @@ export default function AnnouncementBar() {
           {announcements.map((item, index) => (
             <SwiperSlide key={item.id || index}>
               <div className="flex justify-center items-center h-full">
-                <p className="text-[10px] md:text-[11px] uppercase tracking-[0.2em] font-medium text-center">
+                <p className="text-[10px] md:text-[14px] uppercase tracking-[0.2em] font-medium text-center">
                   {item.text}
                 </p>
               </div>
