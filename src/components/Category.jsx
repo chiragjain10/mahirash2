@@ -379,7 +379,7 @@ const Category = () => {
   };
 
   return (
-    <div className="bg-white min-h-screen selection:bg-[#640d14]/10 selection:text-[#640d14]">
+    <div className="bg-white mt-5 min-h-screen selection:bg-[#640d14]/10 selection:text-[#640d14]">
       {/* Header */}
       <section className="relative py-12 bg-neutral-50 border-b border-neutral-100">
         <div className="px-4 text-center">

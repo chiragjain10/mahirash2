@@ -1017,7 +1017,7 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#f8f9fa] font-sans">
+    <div className="admin-dashboard-container flex min-h-screen bg-[#f8f9fa] font-sans ">
       {/* Sidebar */}
       <aside className="w-64 bg-[#1e1e2d] text-white flex flex-col fixed h-full z-30">
         <div className="p-6">

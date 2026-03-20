@@ -127,7 +127,7 @@ function Wishlist() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white ">
       {/* Header Section */}
       <div className="bg-gray-50/50 border-b border-gray-100 py-12 md:py-20">
         <div className="px-4 flex flex-col md:flex-row md:items-center justify-between gap-6 max-w-[1400px] mx-auto">

@@ -182,7 +182,7 @@ function Orders() {
   const statusCounts = getStatusCounts();
 
   return (
-    <div className="orders-container">
+    <div className="orders-container mt-5">
       <h2 className="orders-title">My Orders</h2>
 
       {successState && (

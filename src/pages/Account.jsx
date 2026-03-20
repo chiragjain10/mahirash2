@@ -250,7 +250,7 @@ const Account = () => {
     .reduce((sum, o) => sum + (parseFloat(o.total) || 0), 0);
 
   return (
-    <div className="account-container">
+    <div className="account-container mt-5">
       <div className="account-wrapper">
         {/* Header Section */}
         <div className="account-header">

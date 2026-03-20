@@ -2,7 +2,7 @@ import React from 'react';
 
 function PrivacyPolicy() {
   return (
-    <div className="container py-5">
+    <div className="container py-5 mt-5">
       <div className="row justify-content-center">
         <div className="col-12 col-lg-10">
           <div className="card border-0 shadow-sm rounded-4">

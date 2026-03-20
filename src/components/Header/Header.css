@@ -16,10 +16,25 @@ body {
   padding-top: 130px; /* Base height for header */
 }
 
+/* Remove padding for Admin, Login, and Signup pages */
+body:has(.auth-container),
+body:has(.admin-login-container),
+body:has(.admin-dashboard-container) {
+  padding-top: 0 !important;
+}
+
 @media (max-width: 991px) {
   body {
     padding-top: 100px; /* Smaller header on mobile */
     padding-bottom: 70px; /* Space for bottom nav */
+  }
+
+  /* Remove padding for Admin, Login, and Signup pages on mobile */
+  body:has(.auth-container),
+  body:has(.admin-login-container),
+  body:has(.admin-dashboard-container) {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
   }
 }
 

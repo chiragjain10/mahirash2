@@ -76,7 +76,7 @@ function Chart() {
     const totalPrice = getCartTotal() + (giftPackaging ? 100 : 0);
 
     return (
-        <div className="chart-container">
+        <div className="chart-container mt-5">
             <div className="text-center mb-5 ">
                 <h2 className="fw-bold text-uppercase">Shopping Cart</h2>
                 <div className="mx-auto mt-3" style={{ width: '60px', height: '4px', backgroundColor: 'black', borderRadius: '2px' }}></div>

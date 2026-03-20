@@ -4,7 +4,7 @@ const About = () => {
   return (
     <div>
       {/* Brand Intro Section */}
-      <section className="s-brand-intro py-5 ">
+      <section className="s-brand-intro py-5 mt-5 ">
         <div className="container ">
           <div className="row align-items-center">
             <div className="col-lg-6 mb-4 mb-lg-0">
