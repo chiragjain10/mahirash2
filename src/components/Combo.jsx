@@ -472,82 +472,81 @@ const Combo = () => {
         </div>
       </div>
 
-      {showPopup && (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fadeIn">
+      {/* --- ADD ANOTHER PERFUME POPUP --- */}
+{showPopup && (
+  <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/40 backdrop-blur-md animate-fadeIn">
+    <div className="relative bg-white/80 backdrop-blur-2xl border border-white/50 rounded-2xl p-6 max-w-[340px] w-full mx-4 text-center shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] animate-scaleUp">
+      
+      {/* Delicate Top Border Accent */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-[2px] bg-neutral-800 rounded-full" />
 
-          <div className="relative bg-white/90 backdrop-blur-xl border border-white/30 rounded-3xl p-8 max-w-md w-full mx-4 text-center shadow-[0_20px_60px_rgba(0,0,0,0.25)] animate-scaleUp">
+      <div className="mt-4">
+        <h2 className="text-[10px] font-bold tracking-[0.3em] uppercase text-neutral-500 mb-2">
+          Enhance Your Collection
+        </h2>
+        <h3 className="text-lg font-light text-neutral-900 leading-tight mb-4">
+          Add one more fragrance for <span className="font-semibold italic">5% luxury discount</span>
+        </h3>
+      </div>
 
-            {/* Subtle Glow */}
-            <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-white/40 to-transparent pointer-events-none" />
+      <div className="flex flex-col gap-2">
+        <button
+          onClick={() => setShowPopup(false)}
+          className="w-full py-3 text-[10px] uppercase tracking-[0.2em] bg-neutral-900 text-white rounded-lg hover:bg-black transition-all shadow-md  flex items-center justify-center"
+        >
+          Continue Selection
+        </button>
+        <button
+          onClick={() => setShowPopup(false)}
+          className="w-full py-3 text-[10px] uppercase  flex items-center justify-center tracking-[0.2em] text-neutral-400 hover:text-neutral-900 transition-all"
+        >
+          Maybe Later
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
-            <h2 className="text-xl font-semibold tracking-[0.25em] uppercase text-neutral-900 mb-3">
-              Add Another Perfume
-            </h2>
+{/* --- COMBO SUCCESS POPUP --- */}
+{showComboSuccess && (
+  <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/40 backdrop-blur-md animate-fadeIn">
+    <div className="relative bg-white/80 backdrop-blur-2xl border border-white/50 rounded-2xl p-6 max-w-[340px] w-full mx-4 text-center shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] animate-scaleUp">
+      
+      {/* Sophisticated Success Icon */}
+      <div className="relative w-12 h-12 border border-green-200 rounded-full flex items-center justify-center mx-auto mb-4">
+        <div className="absolute inset-0 rounded-full bg-green-50 animate-pulse" />
+        <i className="fas fa-check text-green-600 relative z-10 text-sm"></i>
+      </div>
 
-            <p className="text-sm text-neutral-600 mb-6 leading-relaxed">
-              Add one more fragrance and unlock an exclusive <span className="text-black font-medium">5% luxury discount</span>.
-            </p>
+      <h2 className="text-[10px] font-bold tracking-[0.3em] uppercase text-green-700 mb-2">
+        Reward Unlocked
+      </h2>
+      
+      <p className="text-sm text-neutral-600 mb-6 font-light italic">
+        "Your curated selection now includes an exclusive 5% discount."
+      </p>
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowPopup(false)}
-                className="w-1/2 py-3 text-xs uppercase tracking-[0.2em] border border-neutral-300 text-neutral-600 rounded-full hover:bg-neutral-100 transition-all flex items-center justify-center"
-              >
-                Maybe Later
-              </button>
-
-              <button
-                onClick={() => setShowPopup(false)}
-                className="w-1/2 py-3 text-xs uppercase tracking-[0.2em] bg-black text-white rounded-full hover:bg-neutral-900 transition-all shadow-lg flex items-center justify-center"
-              >
-                Continue
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      {showComboSuccess && (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fadeIn">
-
-          <div className="relative bg-white/90 backdrop-blur-xl border border-white/30 rounded-3xl p-8 max-w-md w-full mx-4 text-center shadow-[0_20px_60px_rgba(0,0,0,0.25)] animate-scaleUp">
-
-            {/* Glow Layer */}
-            <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-green-50/40 to-transparent pointer-events-none" />
-
-            {/* Icon */}
-            <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 text-white rounded-full flex items-center justify-center mx-auto mb-5 shadow-lg">
-              <i className="fas fa-check text-xl"></i>
-            </div>
-
-            <h2 className="text-xl font-semibold tracking-[0.25em] uppercase text-green-600 mb-2">
-              Combo Success
-            </h2>
-
-            <p className="text-sm text-neutral-600 mb-6 leading-relaxed">
-              You've unlocked a <span className="font-medium text-black">5% exclusive discount</span> on your premium selection.
-            </p>
-
-            <div className="flex flex-col gap-3">
-              <button
-                onClick={() => {
-                  setShowComboSuccess(false);
-                  navigate('/chart');
-                }}
-                className="w-full py-3 text-xs uppercase tracking-[0.2em] bg-black text-white rounded-full hover:bg-neutral-900 transition-all shadow-lg flex items-center justify-center"
-              >
-                View Cart
-              </button>
-
-              <button
-                onClick={() => setShowComboSuccess(false)}
-                className="w-full py-2 text-xs uppercase tracking-[0.2em] text-neutral-500 hover:text-black transition-all flex items-center justify-center"
-              >
-                Keep Shopping
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <div className="space-y-2">
+        <button
+          onClick={() => {
+            setShowComboSuccess(false);
+            navigate('/chart');
+          }}
+          className="w-full py-3 text-[10px]  flex items-center justify-center uppercase tracking-[0.2em] bg-neutral-900 text-white rounded-lg hover:bg-black transition-all shadow-md"
+        >
+          View My Selection
+        </button>
+        
+        <button
+          onClick={() => setShowComboSuccess(false)}
+          className="w-full py-2 text-[10px] uppercase  flex items-center justify-center tracking-[0.2em] text-neutral-400 hover:text-neutral-900 transition-all underline underline-offset-4 decoration-neutral-200"
+        >
+          Continue Browsing
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
       {selectedProduct && <QuickView product={selectedProduct} onClose={() => setSelectedProduct(null)} />}
     </div>

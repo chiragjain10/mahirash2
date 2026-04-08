@@ -236,7 +236,7 @@ function BestSellers({ onQuickView }) {
                         e.stopPropagation();
                         if (onQuickView) onQuickView(product);
                       }}
-                      className="w-full bg-[#640d14] text-white py-2 text-[10px] uppercase tracking-[0.2em] font-medium hover:bg-black transition-colors"
+                      className="w-full bg-[#640d14] text-white py-2 text-[10px] uppercase tracking-[0.2em] font-medium hover:bg-black transition-colors flex items-center justify-center"
                     >
                       Quick View
                     </button>

@@ -230,13 +230,13 @@ function NewArrivals({ onQuickView }) {
                   )}
 
                   {/* Quick View Button (Task 6) */}
-                  <div className="absolute inset-x-0 bottom-0 p-4 translate-y-full lg:group-hover:translate-y-0 transition-transform duration-300 z-20">
+                  <div className="absolute inset-x-0 bottom-0 p-4 translate-y-full lg:group-hover:translate-y-0 transition-transform duration-300 z-20 ">
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
                         if (onQuickView) onQuickView(product);
                       }}
-                      className="w-full bg-[#640d14] text-white py-2 text-[10px] uppercase tracking-[0.2em] font-medium hover:bg-black transition-colors"
+                      className="w-full bg-[#640d14] text-white py-2 text-[10px] uppercase tracking-[0.2em] font-medium hover:bg-black transition-colors flex items-center justify-center"
                     >
                       Quick View
                     </button>
