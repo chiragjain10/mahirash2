@@ -23,7 +23,7 @@ function BannerFresh({ onQuickView }) {
       try {
         const querySnapshot = await getDocs(collection(db, 'products'));
         const items = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        // Filter for products with 10ml size
+        // Filter for products with 2ml-10ml size
         const filtered = items.filter(product => {
           if (!Array.isArray(product.sizes)) return false;
           return product.sizes.some(sz => {
@@ -88,7 +88,7 @@ function BannerFresh({ onQuickView }) {
     }, 2000);
   }
 
-  // Helper Functions from Category.jsx style
+  // Helper Functions
   const getSelectedSize = (product) => {
     if (!product.sizes || !Array.isArray(product.sizes) || product.sizes.length === 0) return null;
     return product.sizes.find(sz => {
@@ -113,21 +113,6 @@ function BannerFresh({ onQuickView }) {
     return match ? parseFloat(match[1]) : null;
   };
 
-  const getAvailableSizes = (product) => {
-    if (!Array.isArray(product.sizes)) return [];
-    const uniqueMap = new Map();
-    product.sizes.forEach(sz => {
-      const label = sz && sz.size ? sz.size : (typeof sz === 'string' ? sz : null);
-      if (!label) return;
-      if (!uniqueMap.has(label)) {
-        uniqueMap.set(label, getNumericSizeValue(label) ?? Infinity);
-      }
-    });
-    return [...uniqueMap.entries()]
-      .sort((a, b) => a[1] - b[1])
-      .map(entry => entry[0]);
-  };
-
   const isOutOfStock = (product) => {
     const sz = getSelectedSize(product);
     if (sz?.isPreOrder) return false;
@@ -143,50 +128,22 @@ function BannerFresh({ onQuickView }) {
     return isNaN(n) ? '0.00' : n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
-  const getCategoryInfo = (badge) => {
-    if (!badge) return { icon: 'fa-tag', bg: 'linear-gradient(135deg, #640d14, #9b7645)' };
-    const b = badge.toLowerCase();
-    if (b === 'sale') return { icon: 'fa-percentage', bg: '#ef4444' };
-    switch (b) {
-      case 'new': return { icon: 'fa-star', bg: 'linear-gradient(135deg, #3FC53A, #4CAF50)' };
-      case 'premium': return { icon: 'fa-crown', bg: 'linear-gradient(135deg, #C9B37E, #D4B04C)' };
-      default: return { icon: 'fa-tag', bg: 'linear-gradient(135deg, #640d14, #9b7645)' };
-    }
-  };
-
-  const handleAddToCart = async (e, product) => {
-    e.stopPropagation();
-    const sz = getSelectedSize(product);
-    const sizeName = sz ? sz.size : (product.size || '');
-    if (!sz?.isPreOrder && (isOutOfStock(product) || isInCart(product.id, sizeName))) return;
-
-    setLoadingAddToCart(product.id);
-    await new Promise(r => setTimeout(r, 600));
-    addToCart({ ...product, selectedSize: sz || { size: sizeName, price: product.price, oldPrice: product.oldPrice } });
-    setLoadingAddToCart(null);
-    const offcanvas = document.getElementById('shoppingCart');
-    if (offcanvas && window.bootstrap) {
-      const bsOffcanvas = new window.bootstrap.Offcanvas(offcanvas);
-      bsOffcanvas.show();
-    }
-  };
-
   if (loading) return <SectionSkeleton />;
 
   return (
-    <section className="md:py-24 bg-white relative overflow-hidden">
+    <section className="section-padding bg-white">
       <div className="max-w-[1400px] mx-auto px-4">
-        <div className="flex items-end justify-between mb-12">
-          <div>
-            <span className="text-[10px] md:text-[12px] text-[#640d14] uppercase tracking-[0.4em] font-bold mb-3 block">Miniature Masterpieces</span>
-            <h2 className="text-2xl md:text-4xl font-serif text-neutral-900 uppercase tracking-widest">Explore our miniatures</h2>
+        <div className="section-title">
+          <span>Miniature Masterpieces</span>
+          <h2>Explore our miniatures</h2>
+          <div className="mt-8 flex justify-center">
+            <button 
+              onClick={() => navigate('/category')}
+              className="bg-[#640d14] text-white px-8 py-2.5 text-[14px] uppercase tracking-[0.2em] font-medium hover:bg-black transition-all duration-300"
+            >
+              VIEW ALL
+            </button>
           </div>
-          <button 
-            onClick={() => navigate('/category')}
-            className="hidden md:block text-[14px] uppercase tracking-[0.2em] font-bold text-neutral-400 hover:text-black transition-colors"
-          >
-            Explore All Collection →
-          </button>
         </div>
 
         <div 
@@ -197,123 +154,98 @@ function BannerFresh({ onQuickView }) {
         >
           {products.map((product) => {
             const sizeInfo = getSelectedSizePrice(product);
-            const badgeInfo = getCategoryInfo(product.badge);
-            const availableSizes = getAvailableSizes(product);
             
             return (
               <div 
                 key={product.id} 
-                className="group relative flex-shrink-0 w-[300px] md:w-[340px] bg-white rounded-[40px] p-6 border border-neutral-50 hover:shadow-2xl hover:shadow-black/5 transition-all duration-700 hover:-translate-y-2 snap-start"
+                className="group relative flex-shrink-0 w-[260px] md:w-[320px] bg-white transition-all duration-500 snap-start"
                 style={{ cursor: 'pointer' }}
                 onClick={() => navigate(`/product/${product.id}`)}
               >
-                {/* Badge */}
-                {product.badge && (
-                  <div 
-                    className="absolute top-8 left-8 z-20 flex items-center gap-2 px-3 py-1.5 rounded-full shadow-lg" 
-                    style={{ background: badgeInfo.bg, color: '#fff' }}
-                  >
-                    <i className={`fas ${badgeInfo.icon} text-[8px]`}></i>
-                    <span className="text-[8px] uppercase tracking-widest font-bold">{product.badge}</span>
-                  </div>
-                )}
-
-                {/* Actions */}
-                <div className="absolute top-8 right-8 z-20 flex flex-col gap-3">
-                  <WishlistButton 
-                    product={product} 
-                    className="!bg-white !shadow-lg !w-10 !h-10 !rounded-full !flex !items-center !justify-center !text-neutral-400 hover:!text-[#640d14] transition-all" 
-                  />
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (window.innerWidth < 768) return;
-                      if (onQuickView) onQuickView(product);
-                    }}
-                    className="hidden md:flex w-10 h-10 bg-white rounded-full items-center justify-center shadow-lg text-neutral-400 hover:text-[#640d14] transition-all"
-                  >
-                    <i className="fas fa-eye text-xs"></i>
-                  </button>
-                </div>
-
-                {/* Image */}
-                <div className="aspect-square mb-6 overflow-hidden rounded-3xl bg-[#fcfcfc]">
+                {/* Image Container */}
+                <div className="relative aspect-[3/4] overflow-hidden bg-[#f5f5f5]">
                   <img 
                     src={getPrimaryImage(product)} 
                     alt={product.name} 
-                    className={`w-full h-full object-contain p-4 transition-all duration-700 group-hover:scale-110 ${isOutOfStock(product) ? 'grayscale opacity-50' : ''}`} 
+                    className={`w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 ${isOutOfStock(product) ? 'grayscale opacity-50' : ''}`} 
                   />
+                  
+                  {/* Minimalist Badge */}
+                  {product.badge && (
+                    <div className="absolute top-4 left-4 z-10 bg-[#454545] text-white px-3 py-1 text-[9px] uppercase tracking-widest font-medium">
+                      {product.badge}
+                    </div>
+                  )}
+
+                  {/* Quick View Button */}
+                  <div className="absolute inset-x-0 bottom-0 p-4 translate-y-full lg:group-hover:translate-y-0 transition-transform duration-300 z-20">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onQuickView) onQuickView(product);
+                      }}
+                      className="w-full bg-[#640d14] text-white py-2 text-[10px] uppercase tracking-[0.2em] font-medium hover:bg-black transition-colors flex items-center justify-center"
+                    >
+                      Quick View
+                    </button>
+                  </div>
+                  
+                  {/* Mobile Quick View Overlay */}
+                  <div 
+                    className="lg:hidden absolute inset-0 z-10 bg-black/5 opacity-0 active:opacity-100 transition-opacity"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onQuickView) onQuickView(product);
+                    }}
+                  />
+
+                  {/* Wishlist Action */}
+                  <div className="absolute top-4 right-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <WishlistButton 
+                      product={product} 
+                      className="!bg-white !w-8 !h-8 !rounded-full !flex !items-center !justify-center !text-[#454545] hover:!bg-[#454545] hover:!text-white transition-all shadow-sm" 
+                    />
+                  </div>
                 </div>
 
                 {/* Content */}
-                <div className="text-center space-y-2">
-                  <p className="text-[8px] text-[#640d14] uppercase tracking-widest font-bold">{product.brand}</p>
-                  <h3 className="text-sm font-serif text-neutral-900 line-clamp-1 h-5">{product.name}</h3>
+                <div className="pt-5 text-center">
+                  <h3 className="text-[14px] font-medium text-[#454545] uppercase tracking-[0.15em] mb-2 px-2 line-clamp-1">
+                    {product.name}
+                  </h3>
                   
-                  <div className="pt-3 space-y-4">
-                    <div className="flex items-center justify-center gap-3">
-                      <span className="text-sm font-bold text-neutral-900">₹{formatPrice(sizeInfo.price)}</span>
-                      {sizeInfo.oldPrice && (
-                        <span className="text-[14px] text-neutral-400 line-through">₹{formatPrice(sizeInfo.oldPrice)}</span>
-                      )}
-                    </div>
-
-                    {sizeInfo.size && (
-                      <div className="text-[14px] text-neutral-500 uppercase tracking-widest font-medium">Size: {sizeInfo.size}</div>
-                    )}
-
-                    {availableSizes.length > 0 && (
-                      <div className="flex flex-wrap justify-center gap-1.5 mt-2">
-                        {availableSizes.map(size => (
-                          <span key={size} className="text-[8px] px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-600 border border-neutral-200 uppercase tracking-tighter font-bold">
-                            {size}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-
-                    {sizeInfo.isPreOrder ? (
-                      <div className="w-full py-3.5 rounded-2xl text-[14px] font-bold uppercase tracking-[0.25em] bg-amber-600/10 text-amber-700 text-center border border-amber-600/20">
-                        Pre-Order
-                      </div>
+                  <div className="flex flex-col items-center gap-1">
+                    {sizeInfo.oldPrice ? (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[14px] text-[#999] uppercase tracking-wider">Regular price</span>
+                          <span className="text-[13px] text-[#999] line-through">₹{formatPrice(sizeInfo.oldPrice)}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[14px] text-[#454545] uppercase tracking-wider">Sale price</span>
+                          <span className="text-[14px] font-semibold text-[#454545]">From ₹{formatPrice(sizeInfo.price)}</span>
+                        </div>
+                      </>
                     ) : (
-                      <button
-                        onClick={(e) => handleAddToCart(e, product)}
-                        disabled={isOutOfStock(product) || loadingAddToCart === product.id || isInCart(product.id, getSelectedSize(product)?.size || product.size || '')}
-                        className={`group relative w-full py-3.5 rounded-2xl text-[14px] font-bold uppercase tracking-[0.25em]
-                        flex items-center justify-center transition-all duration-300 overflow-hidden shadow-lg
-                        ${isOutOfStock(product) || isInCart(product.id, getSelectedSize(product)?.size || product.size || '')
-                            ? "bg-neutral-100 text-neutral-400 cursor-not-allowed shadow-none"
-                            : "bg-neutral-900 text-white hover:bg-[#640d14] hover:shadow-xl active:scale-[0.97] shadow-neutral-200"
-                          }`}
-                      >
-                        {loadingAddToCart === product.id ? (
-                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                        ) : (
-                          <span className="text-center">
-                            {isOutOfStock(product) ? "Out of Stock" : (isInCart(product.id, getSelectedSize(product)?.size || product.size || '') ? "Added to Cart" : "Add to Cart")}
-                          </span>
-                        )}
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[14px] text-[#454545] uppercase tracking-wider">Regular price</span>
+                        <span className="text-[14px] font-semibold text-[#454545]">From ₹{formatPrice(sizeInfo.price)}</span>
+                      </div>
                     )}
                   </div>
+
+                  {/* Minimalist Sale Tag */}
+                  {sizeInfo.oldPrice && (
+                    <div className="mt-2 inline-block border border-[#454545] px-2 py-0.5 text-[9px] text-[#454545] uppercase tracking-widest font-medium">
+                      Sale
+                    </div>
+                  )}
+                  
+                  {sizeInfo.size && <div className="mt-1 text-[11px] uppercase tracking-widest text-neutral-400">{sizeInfo.size}</div>}
                 </div>
               </div>
             );
           })}
-        </div>
-
-        {/* Mobile "Explore All" Button */}
-        <div className="mt-8 flex justify-center md:hidden">
-          <button 
-            onClick={() => navigate('/category')}
-            className="w-full max-w-[280px] py-4 bg-neutral-900 text-white rounded-2xl text-[14px] font-bold uppercase tracking-[0.2em] shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-2 d-md-none"
-          >
-            Explore All Collection
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
         </div>
       </div>
     </section>

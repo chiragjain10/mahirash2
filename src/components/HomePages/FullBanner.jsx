@@ -22,7 +22,7 @@ const FullScreenBanner = () => {
         const data = snap.exists() ? snap.data() : {};
         const nextUrl = data?.bannerImageUrl || '';
         if (nextUrl) {
-          setImageUrl(nextUrl);
+          setImageUrl(nextUrl)
           setHasImage(true);
         } else {
           setImageUrl('');
@@ -50,7 +50,7 @@ const FullScreenBanner = () => {
           <img 
             src={imageUrl} 
             alt="Mahirash Perfume Banner" 
-            className="w-full h-[50vh] object-cover hover:scale-[1.01] transition-transform duration-700"
+            className="w-full h-[75vh] object-cover hover:scale-[1.01] transition-transform duration-700"
           />
         </div>
       </div>
