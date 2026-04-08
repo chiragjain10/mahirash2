@@ -29,7 +29,7 @@ const HeroVideo = () => {
   // Function to handle video playback on slide change
   const handleSlideChange = (swiper) => {
     const activeIndex = swiper.realIndex;
-    
+
     // Play the current video, pause others
     videoRefs.current.forEach((video, index) => {
       if (index === activeIndex) {
@@ -43,9 +43,9 @@ const HeroVideo = () => {
   if (videoUrls.length === 0) return <HeroSkeleton />;
 
   return (
-    <div className="relative w-full">
+    <div class="relative w-100 mt-0 mt-md-5 pt-md-2">
       {!isLoaded && <HeroSkeleton />}
-      
+
       <section className={`premium-hero ${isLoaded ? 'is-visible' : 'is-hidden'}`}>
         <div className="film-grain"></div>
         <div className="vignette"></div>

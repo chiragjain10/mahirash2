@@ -18,7 +18,7 @@ const loadRazorpayScript = (src) => {
 };
 
 function Checkout() {
-  const { cartItems: contextCartItems, getCartTotal, clearCart } = useCart();
+  const { cartItems: contextCartItems, getCartTotal, clearCart, coupon } = useCart();
   const { user, userData } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -98,9 +98,10 @@ function Checkout() {
     return acc + (price * (item.quantity || 1));
   }, 0);
   
+  const discountAmount = (!isBuyNow && coupon) ? subtotal * (coupon.discountPercentage / 100) : 0;
   const shippingCost = subtotal >= 1000 ? 0 : 100;
   const giftCost = giftPackaging ? 100 : 0;
-  const total = subtotal + shippingCost + giftCost;
+  const total = subtotal - discountAmount + shippingCost + giftCost;
 
   // Adjust product inventory per-size using a transaction
   const adjustInventoryForOrder = async (items) => {
@@ -196,6 +197,8 @@ function Checkout() {
       subtotal,
       shippingCost,
       giftCost,
+      discountAmount,
+      couponCode: (!isBuyNow && coupon) ? coupon.code : null,
       total,
       paymentMethod: 'razorpay',
       paymentId,
@@ -316,7 +319,8 @@ function Checkout() {
                 orderId,
                 paymentId,
                 status: 'paid',
-                totals: { subtotal, shippingCost, giftCost, total },
+                totals: { subtotal, shippingCost, giftCost, discountAmount, total },
+                couponCode: (!isBuyNow && coupon) ? coupon.code : null,
                 customer: formData,
                 items: checkoutItems,
                 userId: auth.currentUser ? auth.currentUser.uid : null,
@@ -631,6 +635,12 @@ function Checkout() {
                 <span>Subtotal</span>
                 <span>₹{subtotal.toFixed(2)}</span>
               </div>
+              {(!isBuyNow && coupon) && (
+                <div className="checkout-summary-row">
+                  <span>Discount ({coupon.discountPercentage}%)</span>
+                  <span className="text-success">-₹{discountAmount.toFixed(2)}</span>
+                </div>
+              )}
               <div className="checkout-summary-row">
                 <span>Shipping</span>
                 <span>

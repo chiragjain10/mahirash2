@@ -33,6 +33,7 @@ import ScrollToTop from './components/Scroll';
 import NotFound from './components/NotFound';
 // import RouteChangePreloader from './components/RouteChangePreloader';
 import Category from './components/Category';
+import Combo from './components/Combo';
 import ProductDetails from './components/ProductDetails';
 import Menu  from './components/Header/Menu';
 import NewArrivalsPage from './pages/NewArrivals';
@@ -134,6 +135,17 @@ function App() {
                       <>
                         <Header />
                         <Category />
+                        <MiniCart />
+                        <Footer />
+                      </>
+                    }
+                  />
+                  <Route
+                    path="/combo"
+                    element={
+                      <>
+                        <Header />
+                        <Combo />
                         <MiniCart />
                         <Footer />
                       </>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import './Header.css';
 
@@ -8,14 +8,16 @@ const navLinks = [
   {
     label: 'Categories',
     to: '/category',
-    dropdown: ['Designer', 'Middle Eastern', 'Niche', 'Vials', 'Gift Sets']
+    dropdown: ['Designer', 'Middle eastern', 'niche', 'Vials', 'Gift sets', 'Combo']
   },
+  { label: 'Combo', to: '/combo' },
   { label: 'Our Story', to: '/about' },
   { label: 'Contact Us', to: '/contact' },
 ];
 
 export default function Menu({ drawerOpen, setDrawerOpen }) {
   const location = useLocation();
+  const [openDropdown, setOpenDropdown] = useState(null);
 
   return (
     <>
@@ -24,25 +26,43 @@ export default function Menu({ drawerOpen, setDrawerOpen }) {
         <div className="container">
           <ul className="menu-list">
             {navLinks.map(link => (
-              <li key={link.label} className="menu-item">
+              <li
+                key={link.label}
+                className="menu-item relative"
+                onMouseEnter={() => setOpenDropdown(link.label)}
+                onMouseLeave={() => setOpenDropdown(null)}
+              >
                 <Link
                   to={link.to}
-                  className={location.pathname === link.to ? 'active' : ''}
+                  className={location.pathname === link.to ? 'active flex items-center gap-1' : 'flex items-center gap-1'}
                 >
                   {link.label}
-                  {link.dropdown && <span className="dropdown-icon">▼</span>}
+                  {link.dropdown && <span className="dropdown-icon ml-1">▼</span>}
                 </Link>
                 {link.dropdown && (
-                  <div className="dropdown-menu">
-                    {link.dropdown.map(item => (
-                      <Link 
-                        key={item} 
-                        to={`/category?type=${item.toLowerCase()}`}
-                        className="dropdown-item"
-                      >
-                        {item}
-                      </Link>
-                    ))}
+                  <div
+                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-2xl z-50 overflow-hidden"
+                    style={{
+                      opacity: openDropdown === link.label ? 1 : 0,
+                      visibility: openDropdown === link.label ? 'visible' : 'hidden',
+                      transform:
+                        openDropdown === link.label
+                          ? 'translateX(-50%) translateY(0)'
+                          : 'translateX(-50%) translateY(10px)',
+                      transition: 'all 0.3s ease'
+                    }}
+                  >
+                    <div className="flex flex-col py-2">
+                      {link.dropdown.map(item => (
+                        <Link 
+                          key={item} 
+                          to={`/category/${encodeURIComponent(item)}`}
+                          className="px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-black transition-colors border-b border-gray-50 last:border-0 whitespace-nowrap"
+                        >
+                          {item}
+                        </Link>
+                      ))}
+                    </div>
                   </div>
                 )}
               </li>
@@ -70,6 +90,20 @@ export default function Menu({ drawerOpen, setDrawerOpen }) {
                   >
                     {link.label}
                   </Link>
+                  {link.dropdown && (
+                    <div className="pl-4 mt-3 flex flex-col space-y-3">
+                      {link.dropdown.map(item => (
+                        <Link 
+                          key={item} 
+                          to={`/category/${encodeURIComponent(item)}`}
+                          className="text-xs uppercase tracking-widest text-gray-500 hover:text-black"
+                          onClick={() => setDrawerOpen(false)}
+                        >
+                          {item}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>

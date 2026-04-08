@@ -6,11 +6,13 @@ import { useNavigate } from 'react-router-dom';
 import './Chart.css';
 
 function Chart() {
-    const { cartItems, removeFromCart, updateQuantity, getCartTotal, isLoading } = useCart();
+    const { cartItems, removeFromCart, updateQuantity, getCartTotal, isLoading, coupon, applyCoupon, removeCoupon } = useCart();
     const navigate = useNavigate();
     const [giftPackaging, setGiftPackaging] = useState(false);
     const [agreeTerms, setAgreeTerms] = useState(false);
     const [showWarning, setShowWarning] = useState(false);
+    const [couponCode, setCouponCode] = useState('');
+    const [couponMessage, setCouponMessage] = useState({ text: '', type: '' });
 
     // console.log("Current User UID:", auth.currentUser?.uid);
     const handleQuantityChange = (id, delta, sizeLabel) => {
@@ -32,6 +34,20 @@ function Chart() {
     };
     const handleTermsChange = (e) => {
         setAgreeTerms(e.target.checked);
+    };
+
+    const handleApplyCoupon = () => {
+        if (!couponCode.trim()) return;
+        const result = applyCoupon(couponCode.trim().toUpperCase());
+        setCouponMessage({ text: result.message, type: result.success ? 'success' : 'error' });
+        setTimeout(() => setCouponMessage({ text: '', type: '' }), 3000);
+    };
+
+    const handleRemoveCoupon = () => {
+        removeCoupon();
+        setCouponCode('');
+        setCouponMessage({ text: 'Coupon removed.', type: 'success' });
+        setTimeout(() => setCouponMessage({ text: '', type: '' }), 3000);
     };
 
     const handleCheckout = () => {
@@ -73,7 +89,9 @@ function Chart() {
         return (isNaN(numPrice) ? 0 : numPrice) * quantity;
     };
 
-    const totalPrice = getCartTotal() + (giftPackaging ? 100 : 0);
+    const cartSubtotal = getCartTotal();
+    const discountAmount = coupon ? cartSubtotal * (coupon.discountPercentage / 100) : 0;
+    const totalPrice = cartSubtotal - discountAmount + (giftPackaging ? 100 : 0);
 
     return (
         <div className="chart-container mt-5">
@@ -201,8 +219,15 @@ function Chart() {
 
                         <div className="chart-summary-row">
                             <span className="chart-summary-label">Subtotal</span>
-                            <span className="chart-summary-value">₹{formatPrice(getCartTotal())}</span>
+                            <span className="chart-summary-value">₹{formatPrice(cartSubtotal)}</span>
                         </div>
+
+                        {coupon && (
+                            <div className="chart-summary-row">
+                                <span className="chart-summary-label">Discount ({coupon.discountPercentage}%)</span>
+                                <span className="chart-summary-value text-success">-₹{formatPrice(discountAmount)}</span>
+                            </div>
+                        )}
 
                         {giftPackaging && (
                             <div className="chart-summary-row">
@@ -213,8 +238,32 @@ function Chart() {
 
                         <div className="chart-summary-row">
                             <span className="chart-summary-label">Total</span>
-                            <span className="chart-summary-value">₹{totalPrice.toFixed(2)}</span>
+                            <span className="chart-summary-value">₹{formatPrice(totalPrice)}</span>
                         </div>
+                    </div>
+
+                    {/* Coupon Option */}
+                    <div className="chart-coupon mt-3 mb-3">
+                        <div className="d-flex">
+                            <input 
+                                type="text" 
+                                className="form-control me-2" 
+                                placeholder="Coupon Code" 
+                                value={couponCode} 
+                                onChange={(e) => setCouponCode(e.target.value)} 
+                                disabled={!!coupon}
+                            />
+                            {coupon ? (
+                                <button className="btn btn-outline-danger" onClick={handleRemoveCoupon}>Remove</button>
+                            ) : (
+                                <button className="btn btn-dark" onClick={handleApplyCoupon}>Apply</button>
+                            )}
+                        </div>
+                        {couponMessage.text && (
+                            <div className={`mt-2 text-${couponMessage.type === 'success' ? 'success' : 'danger'}`} style={{ fontSize: '0.9rem' }}>
+                                {couponMessage.text}
+                            </div>
+                        )}
                     </div>
 
                     {/* Gift Option */}

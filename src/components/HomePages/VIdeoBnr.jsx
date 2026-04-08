@@ -29,7 +29,7 @@ const CinematicStage = () => {
   if (!videoUrl) return null;
 
   return (
-    <main className="stage-root">
+    <main className="stage-root ">
       <video
         key={videoUrl}
         className="stage-video"

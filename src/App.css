@@ -20,6 +20,9 @@ body {
     transform: translateX(-50%);
   }
 }
+* {
+  font-family: 'Quicksand', sans-serif !important;
+}
 
 .animate-marquee {
   animation: marquee 28s linear infinite;

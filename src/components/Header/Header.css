@@ -267,6 +267,7 @@ body:has(.admin-dashboard-container) {
   z-index: 100;
 }
 
+/* Ensure menu-item hover also handles tailwind group hover gracefully if used together */
 .menu-item:hover .dropdown-menu {
   opacity: 1;
   visibility: visible;

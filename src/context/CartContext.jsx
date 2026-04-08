@@ -12,6 +12,7 @@ export const CartProvider = ({ children }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [authInitialized, setAuthInitialized] = useState(false);
+    const [coupon, setCoupon] = useState(null);
 
     // Listen for auth state changes
     useEffect(() => {
@@ -193,6 +194,18 @@ export const CartProvider = ({ children }) => {
         );
     };
 
+    const applyCoupon = (code) => {
+        if (code === 'SAVE5') {
+            setCoupon({ code: 'SAVE5', discountPercentage: 5 });
+            return { success: true, message: 'Coupon applied successfully!' };
+        }
+        return { success: false, message: 'Invalid coupon code.' };
+    };
+
+    const removeCoupon = () => {
+        setCoupon(null);
+    };
+
     return (
         <CartContext.Provider value={{
             cartItems,
@@ -204,7 +217,10 @@ export const CartProvider = ({ children }) => {
             getCartCount,
             isInCart,
             isLoading,
-            error
+            error,
+            coupon,
+            applyCoupon,
+            removeCoupon
         }}>
             {children}
         </CartContext.Provider>

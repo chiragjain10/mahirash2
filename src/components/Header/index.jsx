@@ -48,11 +48,10 @@ export default function Header() {
         
         ${showHeader ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"}
         
-        ${
-          isScrolled
+        ${isScrolled
             ? "bg-white/70 backdrop-blur-xl shadow-lg border-b border-gray-200"
             : "bg-transparent"
-        }
+          }
       `}
       >
         <div className="transition-all duration-500">
@@ -65,8 +64,8 @@ export default function Header() {
       {/* MOBILE BOTTOM NAV */}
       <nav className="fixed bottom-0 left-0 w-full bg-white/80 backdrop-blur-lg border-t shadow-md md:hidden z-50">
         <ul className="flex justify-around items-center py-2 text-xs">
-          
-          <li>
+
+          <li className="relative group">
             <Link to="/category" className="flex flex-col items-center gap-1 text-gray-600 hover:text-black transition">
               <svg className="w-5 h-5 transition-transform duration-300 hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <rect x="3" y="3" width="7" height="7" rx="1" />
@@ -76,6 +75,21 @@ export default function Header() {
               </svg>
               <span>Categories</span>
             </Link>
+
+            {/* Hover Dropdown */}
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-40 bg-white border border-gray-100 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 overflow-hidden">
+              <div className="flex flex-col py-2">
+                {['Designer', 'Middle eastern', 'niche', 'Vials', 'Gift sets', 'Combo'].map((item) => (
+                  <Link
+                    key={item}
+                    to={`/category/${encodeURIComponent(item)}`}
+                    className="px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-black transition-colors border-b border-gray-50 last:border-0"
+                  >
+                    {item}
+                  </Link>
+                ))}
+              </div>
+            </div>
           </li>
 
           <li>

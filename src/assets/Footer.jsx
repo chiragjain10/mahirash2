@@ -142,6 +142,13 @@ function Footer() {
                               </Link>
                             </li>
                             <li>
+                              <Link to="/combo"
+                                className="text-main-4 link"
+                              >
+                                Combo
+                              </Link>
+                            </li>
+                            <li>
                               <Link to="/blog"
                                 className="text-main-4 link"
                               >
