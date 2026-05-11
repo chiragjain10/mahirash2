@@ -153,10 +153,6 @@ function QuickView({ product, onClose }) {
         onClose();
     }, [isPreOrder, isSelectedSizeOut, user, navigate, product, quantity, selectedSize, onClose]);
 
-    const MAX_CHARS = 240;
-    const truncatedDesc = product.data && product.data.length > MAX_CHARS 
-        ? product.data.substring(0, MAX_CHARS) + '...' 
-        : product.data;
 
     return (
         <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 md:p-6 antialiased">
@@ -236,9 +232,10 @@ function QuickView({ product, onClose }) {
                         {/* Description */}
                         {product.data && (
                             <div className="space-y-3">
-                                <p className="text-[14px] text-neutral-500 leading-relaxed italic pr-4">
-                                    {truncatedDesc}
-                                </p>
+                                <div 
+                                    className="text-[14px] text-neutral-500 leading-relaxed italic pr-4 max-h-[120px] overflow-hidden relative"
+                                    dangerouslySetInnerHTML={{ __html: product.data }}
+                                />
                                 <button 
                                     onClick={() => {
                                         navigate(`/product/${product.id}`);

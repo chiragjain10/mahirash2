@@ -46,6 +46,7 @@ const Category = () => {
     gender: false,
     size: false,
     price: false,
+    note: false,
     slider: true
   });
 
@@ -57,6 +58,7 @@ const Category = () => {
   const [selectedGenders, setSelectedGenders] = useState(['All']);
   const [selectedSizes, setSelectedSizes] = useState([]);
   const [selectedPrices, setSelectedPrices] = useState([]);
+  const [selectedNotes, setSelectedNotes] = useState([]);
   const [priceRange, setPriceRange] = useState([0, 100000]);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortType, setSortType] = useState('default');
@@ -174,10 +176,15 @@ const Category = () => {
     const searchParam = searchParams.get('search');
     const priceParam = searchParams.get('price');
     const sizeParam = searchParams.get('size');
+    const noteParam = searchParams.get('note');
 
     if (brandParam) {
       setSelectedBrands([brandParam]);
       setOpenSections(prev => ({ ...prev, brand: true }));
+    }
+    if (noteParam) {
+      setSelectedNotes([noteParam]);
+      setOpenSections(prev => ({ ...prev, note: true }));
     }
     if (searchParam) {
       setSearchTerm(searchParam);
@@ -210,42 +217,116 @@ const Category = () => {
     }
   }, [badge, searchParams]);
 
-  // --- Derived Counts & Brands ---
+  // --- Derived Brands ---
   const brands = useMemo(() => {
     const bSet = new Set();
     products.forEach(p => { if (p.brand) bSet.add(p.brand); });
     return Array.from(bSet).sort();
   }, [products]);
 
+  // --- Derived Notes ---
+  const allNotes = useMemo(() => {
+    const nSet = new Set();
+    products.forEach(p => { if (p.note) nSet.add(p.note); });
+    return Array.from(nSet).sort();
+  }, [products]);
+
+  // --- Dynamic Facet Counts (update when other filters change) ---
   const counts = useMemo(() => {
-    const c = { brands: {}, categories: {}, collections: {}, genders: { All: 0, Men: 0, Women: 0, Unisex: 0 }, availability: { inStock: 0 }, sizes: {} };
-    products.forEach(p => {
-      if (p.brand) c.brands[p.brand] = (c.brands[p.brand] || 0) + 1;
-      if (p.badge) {
-        if (CATEGORIES.includes(p.badge)) c.categories[p.badge] = (c.categories[p.badge] || 0) + 1;
-        if (COLLECTIONS.includes(p.badge)) c.collections[p.badge] = (c.collections[p.badge] || 0) + 1;
+    // Applies all filters except the group being overridden
+    const applyFilters = (prods, overrides = {}) => {
+      const br     = overrides.brands      !== undefined ? overrides.brands      : selectedBrands;
+      const cat    = overrides.categories  !== undefined ? overrides.categories  : selectedCategories;
+      const col    = overrides.collections !== undefined ? overrides.collections : selectedCollections;
+      const avail  = overrides.availability !== undefined ? overrides.availability : availabilityFilter;
+      const gen    = overrides.genders     !== undefined ? overrides.genders     : selectedGenders;
+      const sz     = overrides.sizes       !== undefined ? overrides.sizes       : selectedSizes;
+      const pr     = overrides.prices      !== undefined ? overrides.prices      : selectedPrices;
+      const nt     = overrides.notes       !== undefined ? overrides.notes       : selectedNotes;
+
+      let f = prods;
+      if (searchTerm) {
+        const s = searchTerm.toLowerCase();
+        f = f.filter(p => (p.name || '').toLowerCase().includes(s) || (p.brand || '').toLowerCase().includes(s));
       }
-      const g = p.gender ? p.gender.charAt(0).toUpperCase() + p.gender.slice(1).toLowerCase() : 'Unisex';
-      if (c.genders[g] !== undefined) c.genders[g]++;
-      if (g === 'Men' || g === 'Women') c.genders.All++;
-      if (!p.isOutOfStock) c.availability.inStock++;
-      
-      if (p.sizes && Array.isArray(p.sizes)) {
-        p.sizes.forEach(sz => {
-          const match = sz.size?.toString().match(/(\d+(?:\.\d+)?)/);
-          if (match) {
-            const val = parseFloat(match[1]);
-            SIZE_RANGES.forEach(range => {
-              if (val >= range.min && val <= range.max) {
-                c.sizes[range.id] = (c.sizes[range.id] || 0) + 1;
-              }
-            });
-          }
+      if (br.length > 0) f = f.filter(p => br.includes(p.brand));
+      if (cat.length > 0) f = f.filter(p => cat.includes(p.badge));
+      if (col.length > 0) f = f.filter(p => col.includes(p.badge));
+      if (avail === 'inStock') f = f.filter(p => !p.isOutOfStock);
+      if (nt.length > 0) f = f.filter(p => nt.includes(p.note));
+      if (gen.length > 0 && !gen.includes('All')) {
+        f = f.filter(p => {
+          const pg = p.gender ? p.gender.charAt(0).toUpperCase() + p.gender.slice(1).toLowerCase() : 'Unisex';
+          return gen.includes(pg);
         });
       }
-    });
-    return c;
-  }, [products]);
+      if (sz.length > 0) {
+        f = f.filter(p => (p.sizes || []).some(s => {
+          const match = s.size?.toString().match(/(\d+(?:\.\d+)?)/);
+          if (!match) return false;
+          const val = parseFloat(match[1]);
+          return sz.some(rangeId => {
+            const range = SIZE_RANGES.find(r => r.id === rangeId);
+            return range && val >= range.min && val <= range.max;
+          });
+        }));
+      }
+      f = f.filter(p => {
+        const price = getLowestPrice(p);
+        if (price < priceRange[0] || price > priceRange[1]) return false;
+        if (pr.length > 0) {
+          return pr.some(rangeId => {
+            const range = PRICE_RANGES.find(r => r.id === rangeId);
+            return range && price >= range.min && price <= range.max;
+          });
+        }
+        return true;
+      });
+      return f;
+    };
+
+    const buildCounts = (prods) => {
+      const c = { brands: {}, categories: {}, collections: {}, genders: { All: 0, Men: 0, Women: 0, Unisex: 0 }, availability: { inStock: 0 }, sizes: {}, notes: {} };
+      prods.forEach(p => {
+        if (p.brand) c.brands[p.brand] = (c.brands[p.brand] || 0) + 1;
+        if (p.badge) {
+          if (CATEGORIES.includes(p.badge)) c.categories[p.badge] = (c.categories[p.badge] || 0) + 1;
+          if (COLLECTIONS.includes(p.badge)) c.collections[p.badge] = (c.collections[p.badge] || 0) + 1;
+        }
+        if (p.note) c.notes[p.note] = (c.notes[p.note] || 0) + 1;
+        const g = p.gender ? p.gender.charAt(0).toUpperCase() + p.gender.slice(1).toLowerCase() : 'Unisex';
+        if (c.genders[g] !== undefined) c.genders[g]++;
+        if (g === 'Men' || g === 'Women') c.genders.All++;
+        if (!p.isOutOfStock) c.availability.inStock++;
+        if (p.sizes && Array.isArray(p.sizes)) {
+          p.sizes.forEach(sz => {
+            const match = sz.size?.toString().match(/(\d+(?:\.\d+)?)/);
+            if (match) {
+              const val = parseFloat(match[1]);
+              SIZE_RANGES.forEach(range => {
+                if (val >= range.min && val <= range.max) {
+                  c.sizes[range.id] = (c.sizes[range.id] || 0) + 1;
+                }
+              });
+            }
+          });
+        }
+      });
+      return c;
+    };
+
+    // For each filter group, compute counts ignoring that group's own constraint
+    return {
+      brands:       buildCounts(applyFilters(products, { brands: [] })).brands,
+      categories:   buildCounts(applyFilters(products, { categories: [] })).categories,
+      collections:  buildCounts(applyFilters(products, { collections: [] })).collections,
+      genders:      buildCounts(applyFilters(products, { genders: ['All'] })).genders,
+      availability: buildCounts(applyFilters(products, { availability: null })).availability,
+      sizes:        buildCounts(applyFilters(products, { sizes: [] })).sizes,
+      notes:        buildCounts(applyFilters(products, { notes: [] })).notes,
+    };
+  }, [products, searchTerm, selectedBrands, selectedCategories, selectedCollections, availabilityFilter, selectedGenders, selectedSizes, selectedPrices, selectedNotes, priceRange]);
+
 
   // --- Filtering Logic ---
   const filteredProducts = useMemo(() => {
@@ -266,6 +347,10 @@ const Category = () => {
 
     if (selectedCollections.length > 0) {
       filtered = filtered.filter(p => selectedCollections.includes(p.badge));
+    }
+
+    if (selectedNotes.length > 0) {
+      filtered = filtered.filter(p => selectedNotes.includes(p.note));
     }
 
     if (availabilityFilter === 'inStock') {
@@ -312,7 +397,7 @@ const Category = () => {
       case 'alpha-desc': return sorted.sort((a, b) => (b.name || '').localeCompare(a.name || ''));
       default: return sorted;
     }
-  }, [products, searchTerm, selectedBrands, selectedCategories, selectedCollections, availabilityFilter, selectedGenders, selectedSizes, selectedPrices, priceRange, sortType]);
+  }, [products, searchTerm, selectedBrands, selectedCategories, selectedCollections, availabilityFilter, selectedGenders, selectedSizes, selectedPrices, selectedNotes, priceRange, sortType]);
 
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const currentProducts = filteredProducts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
@@ -346,6 +431,7 @@ const Category = () => {
     setSelectedGenders(['All']);
     setSelectedSizes([]);
     setSelectedPrices([]);
+    setSelectedNotes([]);
     setPriceRange([0, 25000]);
     setSearchTerm('');
     setSortType('default');
@@ -542,6 +628,24 @@ const Category = () => {
                     </label>
                   ))}
                 </div>
+              </div>
+            )}
+          </div>
+
+          {/* PRIMARY NODE Accordion */}
+          <div className="border-b border-neutral-100 py-1">
+            <button onClick={() => toggleSection('note')} className="w-full flex items-center justify-between py-3 text-[14px] uppercase tracking-[0.2em] text-neutral-900">
+              <span>PRIMARY NODE</span>
+              <i className={`fas fa-chevron-${openSections.note ? 'up' : 'down'} text-[8px]`}></i>
+            </button>
+            {openSections.note && (
+              <div className="pb-4 space-y-2">
+                {allNotes.map(n => (
+                  <label key={n} className="flex items-center gap-3 cursor-pointer group py-0.5">
+                    <input type="checkbox" checked={selectedNotes.includes(n)} onChange={() => toggleFilter(selectedNotes, setSelectedNotes, n)} className="w-4 h-4 accent-black rounded border-neutral-300" />
+                    <span className="text-[14px] text-neutral-500 uppercase tracking-widest group-hover:text-black transition-colors" style={{fontWeight:300}}>{n} ({counts.notes[n] || 0})</span>
+                  </label>
+                ))}
               </div>
             )}
           </div>

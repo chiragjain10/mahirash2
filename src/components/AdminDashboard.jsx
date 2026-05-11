@@ -41,6 +41,8 @@ import {
   HiOutlineBell,
   HiUserCircle
 } from 'react-icons/hi2';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const genderOptions = ['men', 'women', 'unisex'];
 const basePerfumeNotes = ['Woody', 'Citrus', 'Flower', 'Aromatic'];
@@ -91,6 +93,7 @@ const AdminDashboard = () => {
   const [watchAndBuyTag, setWatchAndBuyTag] = useState(''); // Tag for Watch and Buy video
   const [editingWatchAndBuy, setEditingWatchAndBuy] = useState(null); // { url, tag }
   const [isVideoUploading, setIsVideoUploading] = useState(false);
+  const [previewVideo, setPreviewVideo] = useState(null); // { url, type, label }
 
   useEffect(() => {
     const fetchCustomLists = async () => {
@@ -883,6 +886,96 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleDownloadCSV = () => {
+    if (products.length === 0) {
+      alert('No products to download');
+      return;
+    }
+
+    const headers = ['Name', 'Brand', 'Category', 'Note', 'Gender', 'Price', 'Old Price', 'Stock', 'Is Out Of Stock', 'Tags', 'Image URLs'];
+    const rows = products.flatMap(p => 
+      (p.sizes && p.sizes.length > 0 ? p.sizes : [null]).map(sz => [
+        p.name,
+        p.brand,
+        p.badge || '',
+        p.note || '',
+        p.gender || 'unisex',
+        sz ? sz.price : (p.price || 0),
+        sz ? (sz.oldPrice || '') : (p.oldPrice || ''),
+        sz ? (sz.stock || 0) : (p.stock || 0),
+        sz ? (sz.isOutOfStock ? 'Yes' : 'No') : (p.isOutOfStock ? 'Yes' : 'No'),
+        (p.tags || []).join('; '),
+        sz ? (sz.images || []).join('; ') : (p.image || '')
+      ])
+    );
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(val => {
+        const str = String(val);
+        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+          return `"${str.replace(/"/g, '""')}"`;
+        }
+        return str;
+      }).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `products_export_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+  };
+
+  const handleDownloadPDF = () => {
+    if (products.length === 0) {
+      alert('No products to download');
+      return;
+    }
+
+    const doc = new jsPDF();
+    doc.text('Product Inventory Report', 14, 15);
+    doc.setFontSize(10);
+    doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 22);
+
+    const tableColumn = ["Name", "Brand", "Category", "Price", "Stock", "Status"];
+    const tableRows = [];
+
+    products.forEach(p => {
+      if (p.sizes && p.sizes.length > 0) {
+        p.sizes.forEach(sz => {
+          tableRows.push([
+            `${p.name} (${sz.size})`,
+            p.brand,
+            p.badge || 'N/A',
+            `Rs. ${sz.price}`,
+            sz.stock || 0,
+            sz.isOutOfStock ? 'OOS' : 'In Stock'
+          ]);
+        });
+      } else {
+        tableRows.push([
+          p.name,
+          p.brand,
+          p.badge || 'N/A',
+          `Rs. ${p.price || 0}`,
+          p.stock || 0,
+          p.isOutOfStock ? 'OOS' : 'In Stock'
+        ]);
+      }
+    });
+
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 30,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [30, 30, 45] } // Use RGB for #1e1e2d
+    });
+
+    doc.save(`products_report_${new Date().toISOString().split('T')[0]}.pdf`);
+  };
+
   useEffect(() => {
     fetchProducts();
     fetchReviews();
@@ -1106,6 +1199,20 @@ const AdminDashboard = () => {
                     <MdCloudUpload />
                     Upload CSV
                   </button>
+                  <button
+                    onClick={handleDownloadCSV}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors shadow-sm"
+                  >
+                    <MdFileDownload />
+                    Export CSV
+                  </button>
+                  <button
+                    onClick={handleDownloadPDF}
+                    className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors shadow-sm"
+                  >
+                    <MdFileDownload />
+                    Export PDF
+                  </button>
                 </>
               )}
               {activeTab === 'Manage Videos' && (
@@ -1173,6 +1280,7 @@ const AdminDashboard = () => {
                           <th className="px-6 py-4">Name</th>
                           <th className="px-6 py-4">Brand</th>
                           <th className="px-6 py-4">Category</th>
+                          <th className="px-6 py-4">Primary Node</th>
                           <th className="px-6 py-4">Stock</th>
                           <th className="px-6 py-4 text-right">Actions</th>
                         </tr>
@@ -1226,6 +1334,12 @@ const AdminDashboard = () => {
                                       </span>
                                     );
                                   })()}
+                                </td>
+                                <td className="px-6 py-4">
+                                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-700 rounded-lg text-[11px] font-bold uppercase tracking-wider">
+                                    <i className="fas fa-leaf text-slate-400"></i>
+                                    {product.note || 'None'}
+                                  </span>
                                 </td>
                                 <td className="px-6 py-4">
                                   <div className="space-y-1">
@@ -1666,45 +1780,29 @@ const AdminDashboard = () => {
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-8 border-t border-gray-100">
                      {/* Stage Video */}
                      <div className="space-y-4">
-                       <p className="text-sm font-bold text-slate-900 uppercase tracking-widest">Cinematic Stage Video</p>
-                       <div className="aspect-video bg-gray-100 rounded-2xl overflow-hidden border border-gray-200 relative group">
-                         {currentVideos.stageVideoUrl ? (
-                           <video src={currentVideos.stageVideoUrl} className="w-full h-full object-cover" muted loop onMouseEnter={e => e.target.play()} onMouseLeave={e => e.target.pause()} />
-                         ) : (
-                           <div className="w-full h-full flex flex-col items-center justify-center text-gray-300 gap-2">
-                             <MdVideoLibrary className="w-12 h-12" />
-                             <span className="text-[10px] font-bold uppercase tracking-widest">No Video Uploaded</span>
-                           </div>
-                         )}
-                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                            <button 
-                              onClick={() => {
-                                const input = document.createElement('input');
-                                input.type = 'file';
-                                input.accept = 'video/*';
-                                input.onchange = (e) => {
-                                  const file = e.target.files[0];
-                                  if (file) handleReplaceSingleAsset('stageVideoUrl', file);
-                                };
-                                input.click();
-                              }}
-                              className="p-3 bg-white text-blue-600 rounded-full shadow-2xl hover:scale-110 transition-transform"
-                              title="Replace Video"
-                            >
-                               <MdEdit className="w-6 h-6" />
-                            </button>
-                            {currentVideos.stageVideoUrl && (
-                              <button 
-                                onClick={() => removeSingleAsset('stageVideoUrl')} 
-                                className="p-3 bg-white text-red-600 rounded-full shadow-2xl hover:scale-110 transition-transform"
-                                title="Remove Video"
-                              >
-                                <MdDelete className="w-6 h-6" />
-                              </button>
-                            )}
-                         </div>
-                       </div>
-                     </div>
+                        <p className="text-sm font-bold text-slate-900 uppercase tracking-widest">Cinematic Stage Video</p>
+                        <div className="aspect-video bg-gray-100 rounded-2xl overflow-hidden border border-gray-200 relative group cursor-pointer" onClick={() => currentVideos.stageVideoUrl && setPreviewVideo({ url: currentVideos.stageVideoUrl, label: 'Stage Video' })}>
+                          {currentVideos.stageVideoUrl ? (
+                            <video src={currentVideos.stageVideoUrl} className="w-full h-full object-cover" muted loop autoPlay playsInline />
+                          ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center text-gray-300 gap-2">
+                              <MdVideoLibrary className="w-12 h-12" />
+                              <span className="text-[10px] font-bold uppercase tracking-widest">No Video Uploaded</span>
+                            </div>
+                          )}
+                          {currentVideos.stageVideoUrl && (
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <div className="p-4 bg-white/90 rounded-full shadow-xl">
+                                <svg className="w-8 h-8 text-slate-900" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                              </div>
+                            </div>
+                          )}
+                          <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
+                            <button onClick={() => { const i=document.createElement('input'); i.type='file'; i.accept='video/*'; i.onchange=(e)=>{const f=e.target.files[0]; if(f) handleReplaceSingleAsset('stageVideoUrl',f);}; i.click(); }} className="p-2 bg-white text-blue-600 rounded-full shadow-lg hover:scale-110 transition-transform" title="Replace"><MdEdit className="w-4 h-4" /></button>
+                            {currentVideos.stageVideoUrl && <button onClick={() => removeSingleAsset('stageVideoUrl')} className="p-2 bg-white text-red-600 rounded-full shadow-lg hover:scale-110 transition-transform" title="Remove"><MdDelete className="w-4 h-4" /></button>}
+                          </div>
+                        </div>
+                      </div>
 
                      {/* Bottom Banner Image */}
                      <div className="space-y-4">
@@ -1806,18 +1904,19 @@ const AdminDashboard = () => {
                      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                         {currentVideos.watchAndBuyVideos && currentVideos.watchAndBuyVideos.map((video, idx) => (
                           <div key={idx} className="space-y-3">
-                            <div className="aspect-[9/16] bg-gray-100 rounded-2xl overflow-hidden border border-gray-200 relative group">
-                              <video src={video.url} className="w-full h-full object-cover" muted loop onMouseEnter={e => e.target.play()} onMouseLeave={e => e.target.pause()} />
-                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3">
-                                <button onClick={() => setEditingWatchAndBuy(video)} className="p-2 bg-white text-blue-600 rounded-full shadow-xl hover:scale-110 transition-transform">
-                                  <MdEdit className="w-5 h-5" />
-                                </button>
-                                <button onClick={() => removeWatchAndBuyVideo(video.url)} className="p-2 bg-white text-red-600 rounded-full shadow-xl hover:scale-110 transition-transform">
-                                  <MdDelete className="w-5 h-5" />
-                                </button>
-                              </div>
-                            </div>
-                            {editingWatchAndBuy?.url === video.url ? (
+                             <div className="aspect-[9/16] bg-gray-100 rounded-2xl overflow-hidden border border-gray-200 relative group cursor-pointer" onClick={() => setPreviewVideo({ url: video.url, label: video.tag || `Watch & Buy ${idx + 1}` })}>
+                               <video src={video.url} className="w-full h-full object-cover" muted loop autoPlay playsInline />
+                               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                                 <div className="p-3 bg-white/90 rounded-full shadow-xl">
+                                   <svg className="w-6 h-6 text-slate-900" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                 </div>
+                               </div>
+                               <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
+                                 <button onClick={() => setEditingWatchAndBuy(video)} className="p-1.5 bg-white text-blue-600 rounded-full shadow-lg hover:scale-110 transition-transform"><MdEdit className="w-4 h-4" /></button>
+                                 <button onClick={() => removeWatchAndBuyVideo(video.url)} className="p-1.5 bg-white text-red-600 rounded-full shadow-lg hover:scale-110 transition-transform"><MdDelete className="w-4 h-4" /></button>
+                               </div>
+                             </div>
+                             {editingWatchAndBuy?.url === video.url ? (
                               <div className="flex items-center gap-2">
                                 <input 
                                   type="text" 
@@ -1945,6 +2044,13 @@ const AdminDashboard = () => {
                 className="px-6 py-2.5 text-sm font-bold text-gray-600 hover:text-gray-800"
               >
                 Cancel
+              </button>
+              <button
+                onClick={handleDownloadCSV}
+                className="px-6 py-2.5 bg-green-50 text-green-700 hover:bg-green-100 rounded-lg text-sm font-bold transition-all flex items-center gap-2"
+              >
+                <MdFileDownload />
+                Download All (CSV)
               </button>
               <button
                 onClick={handleCsvUpload}
@@ -2189,6 +2295,30 @@ const AdminDashboard = () => {
         .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
         .scrollbar-thin::-webkit-scrollbar-thumb { background: #374151; border-radius: 20px; }
       `}</style>
+
+      {/* Video Preview Modal */}
+      {previewVideo && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm" onClick={() => setPreviewVideo(null)}>
+          <div className="relative w-full max-w-4xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-white font-bold uppercase tracking-widest text-sm">{previewVideo.label}</span>
+              <button
+                onClick={() => setPreviewVideo(null)}
+                className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors"
+              >
+                <MdClose className="w-6 h-6" />
+              </button>
+            </div>
+            <video
+              src={previewVideo.url}
+              className="w-full rounded-2xl shadow-2xl max-h-[80vh] bg-black"
+              controls
+              autoPlay
+              playsInline
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -3,6 +3,7 @@ import { db } from './firebase';
 import { collection, addDoc, doc, getDoc, updateDoc, arrayUnion, setDoc } from 'firebase/firestore';
 import axios from 'axios';
 import { useEffect } from 'react';
+import { Editor } from '@tinymce/tinymce-react';
 
 const genderOptions = ['men', 'women', 'unisex'];
 const basePerfumeNotes = ['Woody', 'Citrus', 'Flower', 'Aromatic'];
@@ -681,14 +682,32 @@ const UploadItemForm = ({ onUploadSuccess, editProduct }) => {
             <div className="space-y-6">
               <div className="flex flex-col gap-2">
                 <label className="text-[10px] font-bold tracking-[0.2em] text-neutral-500 uppercase">Product Narrative</label>
-                <textarea
-                  name="data"
-                  rows="5"
+                <Editor
+                  apiKey='uofa7hsyygrxt05ghf9jru7ikamcu759utdjungruz24s9c1'
                   value={formData.data}
-                  placeholder="Describe the aromatic experience..."
-                  className="w-full bg-neutral-50 border-none rounded-xl p-4 text-neutral-800 focus:ring-2 focus:ring-neutral-900 outline-none resize-none"
-                  onChange={handleChange}
-                ></textarea>
+                  init={{
+                    height: 400,
+                    menubar: false,
+                    plugins: [
+                      'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 'link', 'lists', 'media', 'searchreplace', 'table', 'visualblocks', 'wordcount',
+                      'checklist', 'mediaembed', 'casechange', 'formatpainter', 'pageembed', 'a11ychecker', 'tinymcespellchecker', 'permanentpen', 'powerpaste', 'advtable', 'advcode', 'advtemplate', 'tinymceai', 'uploadcare', 'mentions', 'tinycomments', 'tableofcontents', 'footnotes', 'mergetags', 'autocorrect', 'typography', 'inlinecss', 'markdown','importword', 'exportword', 'exportpdf'
+                    ],
+                    toolbar: 'undo redo | tinymceai-chat tinymceai-quickactions tinymceai-review | blocks fontfamily fontsize | bold italic underline strikethrough | link media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography uploadcare | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
+                    tinycomments_mode: 'embedded',
+                    tinycomments_author: 'Author name',
+                    mergetags_list: [
+                      { value: 'First.Name', title: 'First Name' },
+                      { value: 'Email', title: 'Email' },
+                    ],
+                    tinymceai_token_provider: async () => {
+                      await fetch(`https://demo.api.tiny.cloud/1/uofa7hsyygrxt05ghf9jru7ikamcu759utdjungruz24s9c1/auth/random`, { method: "POST", credentials: "include" });
+                      return { token: await fetch(`https://demo.api.tiny.cloud/1/uofa7hsyygrxt05ghf9jru7ikamcu759utdjungruz24s9c1/jwt/tinymceai`, { credentials: "include" }).then(r => r.text()) };
+                    },
+                    uploadcare_public_key: '33b01d46d2f482147d42',
+                    content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
+                  }}
+                  onEditorChange={(content) => setFormData(prev => ({ ...prev, data: content }))}
+                />
               </div>
             </div>
           </div>

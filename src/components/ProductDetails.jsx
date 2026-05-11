@@ -493,7 +493,7 @@ function ProductDetails() {
                 </button>
                 <div className={`pd-premium-accordion-content ${accordionOpen === 'description' ? 'active' : ''}`}>
                   <div className="pd-premium-description">
-                    <p>{product.data || 'No description available.'}</p>
+                    <div dangerouslySetInnerHTML={{ __html: product.data || 'No description available.' }} />
                     {product.sizes && (
                       <div className="pd-premium-sizes-info">
                         <div className="pd-premium-sizes-info-title">Available Variants</div>

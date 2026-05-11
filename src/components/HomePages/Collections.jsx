@@ -42,10 +42,7 @@ function Collections() {
           {items.map((item, index) => (
             <SwiperSlide key={index} className="h-full">
               <Link
-                to={{
-                  pathname: `/category/${encodeURIComponent(item.title)}`,
-                  search: `?note=${encodeURIComponent(item.title)}`
-                }}
+                to={`/category?note=${encodeURIComponent(item.title)}`}
                 className="group relative block w-full aspect-[3/4] overflow-hidden bg-[#f5f5f5]"
               >
                 {/* Image Wrapper */}
