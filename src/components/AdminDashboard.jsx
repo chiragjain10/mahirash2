@@ -5,6 +5,8 @@ import { db } from './firebase';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAdminAuth } from '../context/AdminAuthContext';
 import UploadItemForm from './UploadItemForm';
+import AdminAnalyticsDashboard from './AdminAnalyticsDashboard';
+import BillTemplate from './BillTemplate';
 import axios from 'axios';
 import { 
   MdDashboard, 
@@ -14,18 +16,31 @@ import {
   MdNotificationsNone,
   MdOutlineKeyboardArrowDown,
   MdAdd,
-  MdFileDownload,
-  MdVideoLibrary,
-  MdEdit,
   MdDelete,
+  MdEdit,
+  MdFileDownload,
+  MdCloudUpload,
+  MdHandshake,
+  MdBarChart,
+  MdTrendingUp,
+  MdVisibility,
+  MdSettings,
+  MdPerson,
+  MdNotifications,
+  MdDarkMode,
+  MdLightMode,
+  MdLanguage,
+  MdBackup,
+  MdRestore,
+  MdSecurity,
+  MdHelp,
+  MdVideoLibrary,
   MdCheckCircle,
   MdError,
   MdList,
   MdReceipt,
   MdComment,
   MdClose,
-  MdCloudUpload,
-  MdHandshake
 } from 'react-icons/md';
 import { 
   HiUsers, 
@@ -62,7 +77,7 @@ const AdminDashboard = () => {
   const [csvFile, setCsvFile] = useState(null);
   const [isCsvUploading, setIsCsvUploading] = useState(false);
   const [csvUploadProgress, setCsvUploadProgress] = useState({ current: 0, total: 0, errors: [] });
-  const [activeTab, setActiveTab] = useState('Manage Products');
+  const [activeTab, setActiveTab] = useState('Dashboard');
   const [users, setUsers] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
   const [newAnnouncement, setNewAnnouncement] = useState('');
@@ -71,7 +86,37 @@ const AdminDashboard = () => {
   const [isMetadataUpdating, setIsMetadataUpdating] = useState(false);
   const [newMetadataVal, setNewMetadataVal] = useState('');
   const [editingMetadata, setEditingMetadata] = useState(null); // { type, oldVal, newVal }
+  const [showBillModal, setShowBillModal] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [metadataPage, setMetadataPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(15);
+  
+  // Multi-selection states
+  const [selectedOrders, setSelectedOrders] = useState(new Set());
+  const [selectedProducts, setSelectedProducts] = useState(new Set());
+  const [selectedMetadata, setSelectedMetadata] = useState(new Set());
+  
+  // Date filtering for orders
+  const [orderDateFilter, setOrderDateFilter] = useState('all');
+  const [orderDateRange, setOrderDateRange] = useState({ start: '', end: '' });
+  
+  // Admin profile and settings states
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const { adminUser, adminLogout } = useAdminAuth();
+  const [adminProfile, setAdminProfile] = useState({
+    name: 'Admin User',
+    email: adminUser?.email || 'admin@mahirash.com',
+    role: 'Super Admin',
+    avatar: '',
+    phone: '',
+    notifications: true,
+    darkMode: false,
+    language: 'en'
+  });
+  
   const navigate = useNavigate();
 
   // Video management states
@@ -384,6 +429,250 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error('Error deleting order:', error);
       alert('Failed to delete order. Please try again.');
+    }
+  };
+
+  const handleViewBill = (order) => {
+    setSelectedOrder(order);
+    setShowBillModal(true);
+  };
+
+  const handleCloseBillModal = () => {
+    setShowBillModal(false);
+    setSelectedOrder(null);
+  };
+
+  // Utility functions for date filtering
+  const filterOrdersByDate = (orders) => {
+    if (orderDateFilter === 'all') return orders;
+    
+    const now = new Date();
+    let startDate, endDate;
+    
+    switch (orderDateFilter) {
+      case 'today':
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+        break;
+      case 'weekly':
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
+        endDate = new Date(now);
+        break;
+      case 'monthly':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        break;
+      case 'yearly':
+        startDate = new Date(now.getFullYear(), 0, 1);
+        endDate = new Date(now.getFullYear(), 11, 31);
+        break;
+      case 'custom':
+        startDate = orderDateRange.start ? new Date(orderDateRange.start) : null;
+        endDate = orderDateRange.end ? new Date(orderDateRange.end) : null;
+        break;
+      default:
+        return orders;
+    }
+    
+    return orders.filter(order => {
+      const orderDate = order.createdAt?.seconds ? new Date(order.createdAt.seconds * 1000) : new Date(order.createdAt);
+      if (!orderDate) return false;
+      
+      if (startDate && endDate) {
+        return orderDate >= startDate && orderDate <= endDate;
+      } else if (startDate) {
+        return orderDate >= startDate;
+      } else if (endDate) {
+        return orderDate <= endDate;
+      }
+      return true;
+    });
+  };
+
+  // Export functions
+  const exportOrdersToCSV = () => {
+    const filteredOrders = filterOrdersByDate(orders);
+    const csvContent = [
+      ['Order ID', 'Customer Name', 'Customer Email', 'Total Amount', 'Status', 'Date', 'Payment Method'],
+      ...filteredOrders.map(order => [
+        order.id,
+        `${order.customerInfo?.firstName || ''} ${order.customerInfo?.lastName || ''}`.trim(),
+        order.customerInfo?.email || '',
+        order.total || 0,
+        order.status || 'pending',
+        order.createdAt?.seconds ? new Date(order.createdAt.seconds * 1000).toLocaleDateString() : '',
+        order.paymentMethod || 'Online'
+      ])
+    ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `orders_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const exportOrdersToPDF = () => {
+    const filteredOrders = filterOrdersByDate(orders);
+    const doc = new jsPDF();
+    
+    doc.text('Orders Report', 14, 15);
+    doc.setFontSize(10);
+    doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 22);
+    doc.text(`Filter: ${orderDateFilter === 'all' ? 'All Orders' : orderDateFilter}`, 14, 29);
+    doc.text(`Total Orders: ${filteredOrders.length}`, 14, 36);
+    
+    const tableColumn = ['Order ID', 'Customer', 'Total', 'Status', 'Date'];
+    const tableRows = filteredOrders.map(order => [
+      order.id,
+      `${order.customerInfo?.firstName || ''} ${order.customerInfo?.lastName || ''}`.trim() || 'Guest',
+      `Rs. ${order.total || 0}`,
+      order.status || 'pending',
+      order.createdAt?.seconds ? new Date(order.createdAt.seconds * 1000).toLocaleDateString() : '-'
+    ]);
+    
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 45,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [100, 13, 20] }
+    });
+    
+    doc.save(`orders_report_${new Date().toISOString().split('T')[0]}.pdf`);
+  };
+
+  // Multi-selection handlers
+  const handleSelectOrder = (orderId) => {
+    setSelectedOrders(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(orderId)) {
+        newSet.delete(orderId);
+      } else {
+        newSet.add(orderId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAllOrders = () => {
+    const filteredOrders = filterOrdersByDate(orders);
+    if (selectedOrders.size === filteredOrders.length) {
+      setSelectedOrders(new Set());
+    } else {
+      setSelectedOrders(new Set(filteredOrders.map(order => order.id)));
+    }
+  };
+
+  const handleBulkDeleteOrders = async () => {
+    if (selectedOrders.size === 0) return;
+    
+    if (!window.confirm(`Are you sure you want to delete ${selectedOrders.size} order(s)? This action cannot be undone.`)) return;
+    
+    try {
+      await Promise.all(
+        Array.from(selectedOrders).map(orderId => deleteDoc(doc(db, 'orders', orderId)))
+      );
+      setOrders(prev => prev.filter(order => !selectedOrders.has(order.id)));
+      setSelectedOrders(new Set());
+    } catch (error) {
+      console.error('Error deleting orders:', error);
+      alert('Failed to delete some orders. Please try again.');
+    }
+  };
+
+  const handleSelectProduct = (productId) => {
+    setSelectedProducts(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(productId)) {
+        newSet.delete(productId);
+      } else {
+        newSet.add(productId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAllProducts = () => {
+    if (selectedProducts.size === products.length) {
+      setSelectedProducts(new Set());
+    } else {
+      setSelectedProducts(new Set(products.map(product => product.id)));
+    }
+  };
+
+  const handleBulkDeleteProducts = async () => {
+    if (selectedProducts.size === 0) return;
+    
+    if (!window.confirm(`Are you sure you want to delete ${selectedProducts.size} product(s)? This action cannot be undone.`)) return;
+    
+    try {
+      await Promise.all(
+        Array.from(selectedProducts).map(productId => deleteDoc(doc(db, 'products', productId)))
+      );
+      setProducts(prev => prev.filter(product => !selectedProducts.has(product.id)));
+      setSelectedProducts(new Set());
+    } catch (error) {
+      console.error('Error deleting products:', error);
+      alert('Failed to delete some products. Please try again.');
+    }
+  };
+
+  const handleSelectMetadata = (item) => {
+    setSelectedMetadata(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(item)) {
+        newSet.delete(item);
+      } else {
+        newSet.add(item);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAllMetadata = () => {
+    const fieldMap = { 'Brands': 'brands', 'Categories': 'categories', 'Nodes': 'notes' };
+    const baseMap = { 
+      'Brands': baseBrands, 
+      'Categories': ['Designer', 'Middle eastern', 'niche', 'Vials', 'Gift sets', 'Combo'], 
+      'Nodes': basePerfumeNotes 
+    };
+    
+    if (!['Brands', 'Categories', 'Nodes'].includes(activeTab)) return;
+    
+    const field = fieldMap[activeTab];
+    const deletedField = `deleted_${field}`;
+    const customItems = customLists[field] || [];
+    const deletedItems = customLists[deletedField] || [];
+    const baseItems = baseMap[activeTab].filter(item => !deletedItems.includes(item));
+    
+    const allItems = [
+      ...baseItems.map(item => item),
+      ...customItems.map(item => item)
+    ].sort((a, b) => a.localeCompare(b));
+    
+    if (selectedMetadata.size === allItems.length) {
+      setSelectedMetadata(new Set());
+    } else {
+      setSelectedMetadata(new Set(allItems));
+    }
+  };
+
+  const handleBulkDeleteMetadata = async () => {
+    if (selectedMetadata.size === 0) return;
+    
+    if (!window.confirm(`Are you sure you want to delete ${selectedMetadata.size} ${activeTab.toLowerCase()} item(s)? This action cannot be undone.`)) return;
+    
+    try {
+      await Promise.all(
+        Array.from(selectedMetadata).map(item => handleDeleteMetadata(activeTab, item))
+      );
+      setSelectedMetadata(new Set());
+    } catch (error) {
+      console.error('Error deleting metadata:', error);
+      alert('Failed to delete some items. Please try again.');
     }
   };
 
@@ -986,6 +1275,7 @@ const AdminDashboard = () => {
   }, []);
 
   const sidebarItems = [
+    { name: 'Dashboard', icon: <MdBarChart className="w-5 h-5" /> },
     { name: 'Manage Products', icon: <MdList className="w-5 h-5" /> },
     { name: 'Manage Videos', icon: <MdVideoLibrary className="w-5 h-5" /> },
     { name: 'Announcements', icon: <MdNotificationsNone className="w-5 h-5" /> },
@@ -1112,106 +1402,196 @@ const AdminDashboard = () => {
   return (
     <div className="admin-dashboard-container flex min-h-screen bg-[#f8f9fa] font-sans ">
       {/* Sidebar */}
-      <aside className="w-64 bg-[#1e1e2d] text-white flex flex-col fixed h-full z-30">
-        <div className="p-6">
-          <h1 className="text-2xl font-bold tracking-tight">Admin</h1>
+      <aside className={`fixed left-0 top-0 h-full w-64 bg-slate-900 text-white flex flex-col z-30 transform transition-transform duration-300 ${
+        mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      }`}>
+        <div className="p-4 lg:p-6 border-b border-white/10">
+          <div className="flex items-center gap-3">
+            <div className="w-8 lg:w-10 h-8 lg:h-10 bg-white rounded-lg flex items-center justify-center">
+              <span className="text-slate-900 font-bold text-sm lg:text-lg">M</span>
+            </div>
+            <div>
+              <h1 className="text-lg lg:text-xl font-bold">Mahirash</h1>
+              <p className="text-xs text-gray-400 hidden lg:block">Admin Panel</p>
+            </div>
+          </div>
         </div>
-        
-        <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700">
+
+        <nav className="flex-1 p-3 lg:p-4 space-y-2 overflow-y-auto">
           {sidebarItems.map((item, index) => (
             <button
               key={index}
               onClick={() => setActiveTab(item.name)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-sm font-medium ${
+              className={`w-full flex items-center gap-3 px-3 lg:px-4 py-2 lg:py-3 rounded-lg text-sm font-medium transition-colors ${
                 activeTab === item.name 
                   ? 'bg-white/10 text-white' 
                   : 'text-gray-400 hover:bg-white/5 hover:text-white'
               }`}
             >
               {item.icon}
-              {item.name}
+              <span className="hidden lg:inline">{item.name}</span>
             </button>
           ))}
         </nav>
 
-        <div className="p-4 border-t border-white/10">
+        <div className="flex items-center justify-between p-3 lg:p-4 border-t border-white/10">
           <Link
             to="/"
-            className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-white transition-colors"
+            className="flex items-center gap-3 px-3 lg:px-4 py-2 lg:py-3 rounded-lg text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-white transition-colors"
           >
             <HiOutlineHome className="w-5 h-5" />
-            Back to Site
+            <span className="hidden lg:inline">Back to Site</span>
           </Link>
+          <button
+            onClick={() => setMobileSidebarOpen(false)}
+            className="lg:hidden p-2 text-gray-400 hover:text-white transition-colors"
+          >
+            <MdClose className="w-5 h-5" />
+          </button>
         </div>
       </aside>
 
+      {/* Mobile Sidebar Backdrop */}
+      {mobileSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-20 lg:hidden"
+          onClick={() => setMobileSidebarOpen(false)}
+        />
+      )}
+
       {/* Main Content */}
-      <div className="flex-1 flex flex-col ml-64">
+      <div className="flex-1 flex flex-col ml-0 lg:ml-64">
         {/* Top Header */}
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 sticky top-0 z-20">
-          <div className="flex items-center gap-4">
-            <h2 className="text-lg font-semibold text-gray-800">Admin Panel</h2>
+        <header className="h-16 lg:h-20 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-20">
+          <div className="flex items-center gap-2 lg:gap-4">
+            <button 
+              onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+              className="lg:hidden p-2 text-gray-500 hover:text-gray-700"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <h2 className="text-base lg:text-lg font-semibold text-gray-800">Admin Panel</h2>
           </div>
 
-          <div className="flex items-center gap-6">
-            <button className="relative text-gray-500 hover:text-gray-700 transition-colors">
-              <HiOutlineBell className="w-6 h-6" />
-              <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+          <div className="flex items-center gap-2 lg:gap-6">
+            <button className="relative text-gray-500 hover:text-gray-700 transition-colors p-2">
+              <HiOutlineBell className="w-5 h-5 lg:w-6 lg:h-6" />
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
             </button>
             
-            <div className="flex items-center gap-3 pl-6 border-l border-gray-200">
-              <div className="flex items-center gap-2 cursor-pointer group">
-                <HiUserCircle className="w-8 h-8 text-gray-400 group-hover:text-gray-600 transition-colors" />
-                <div className="text-sm">
-                  <p className="font-semibold text-gray-800 leading-tight">Admin</p>
-                </div>
-                <MdOutlineKeyboardArrowDown className="w-4 h-4 text-gray-500" />
-              </div>
+            <div className="relative">
               <button 
-                onClick={handleLogout}
-                className="ml-4 p-2 text-gray-500 hover:text-red-600 transition-colors"
-                title="Logout"
+                onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                className="flex items-center gap-2 lg:gap-3 pl-2 lg:pl-6 border-l border-gray-200 p-2 rounded-lg hover:bg-gray-50 transition-colors"
               >
-                <MdLogout className="w-5 h-5" />
+                <div className="flex items-center gap-2">
+                  {adminProfile.avatar ? (
+                    <img src={adminProfile.avatar} alt="Profile" className="w-7 h-7 lg:w-8 lg:h-8 rounded-full object-cover" />
+                  ) : (
+                    <HiUserCircle className="w-7 h-7 lg:w-8 lg:h-8 text-gray-400" />
+                  )}
+                  <div className="hidden sm:block text-sm">
+                    <p className="font-semibold text-gray-800 leading-tight">{adminProfile.name}</p>
+                    <p className="text-xs text-gray-500">{adminProfile.role}</p>
+                  </div>
+                </div>
+                <MdOutlineKeyboardArrowDown className={`w-4 h-4 text-gray-500 transition-transform ${showProfileDropdown ? 'rotate-180' : ''}`} />
               </button>
+              
+              {/* Profile Dropdown */}
+              {showProfileDropdown && (
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                  <div className="px-4 py-3 border-b border-gray-100">
+                    <p className="text-sm font-semibold text-gray-800">{adminProfile.name}</p>
+                    <p className="text-xs text-gray-500">{adminProfile.email}</p>
+                    <p className="text-xs text-gray-400 mt-1">{adminProfile.role}</p>
+                  </div>
+                  
+                  <button
+                    onClick={() => {
+                      setShowProfileDropdown(false);
+                      setShowProfileModal(true);
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3"
+                  >
+                    <MdPerson className="w-4 h-4" />
+                    Edit Profile
+                  </button>
+                  
+                  <button
+                    onClick={() => {
+                      setShowProfileDropdown(false);
+                      setShowSettingsModal(true);
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3"
+                  >
+                    <MdSettings className="w-4 h-4" />
+                    Settings
+                  </button>
+                  
+                  <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3">
+                    <MdHelp className="w-4 h-4" />
+                    Help & Support
+                  </button>
+                  
+                  <div className="border-t border-gray-100 mt-2 pt-2">
+                    <button 
+                      onClick={() => {
+                        setShowProfileDropdown(false);
+                        handleLogout();
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3"
+                    >
+                      <MdLogout className="w-4 h-4" />
+                      Logout
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </header>
 
         {/* Content Area */}
-        <main className="p-8 space-y-8 max-w-[1400px] mx-auto w-full">
-          <div className="flex items-center justify-between">
-            <h3 className="text-2xl font-bold text-gray-800">{activeTab}</h3>
-            <div className="flex gap-3">
+        <main className="p-4 lg:p-8 space-y-6 lg:space-y-8 max-w-[1400px] mx-auto w-full">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <h3 className="text-xl lg:text-2xl font-bold text-gray-800">{activeTab}</h3>
+            <div className="flex flex-wrap gap-2 lg:gap-3">
               {activeTab === 'Manage Products' && (
                 <>
                   <button
                     onClick={() => setShowUploadModal(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-medium transition-colors shadow-sm"
+                    className="flex items-center gap-2 px-3 lg:px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-medium transition-colors shadow-sm text-sm lg:text-base"
                   >
                     <MdAdd className="text-lg" />
-                    Add Product
+                    <span className="hidden sm:inline">Add Product</span>
+                    <span className="sm:hidden">Add</span>
                   </button>
                   <button
                     onClick={() => setShowCsvModal(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm"
+                    className="flex items-center gap-2 px-3 lg:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm text-sm lg:text-base"
                   >
                     <MdCloudUpload />
-                    Upload CSV
+                    <span className="hidden sm:inline">Upload CSV</span>
+                    <span className="sm:hidden">CSV</span>
                   </button>
                   <button
                     onClick={handleDownloadCSV}
-                    className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors shadow-sm"
+                    className="flex items-center gap-2 px-3 lg:px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors shadow-sm text-sm lg:text-base"
                   >
                     <MdFileDownload />
-                    Export CSV
+                    <span className="hidden sm:inline">Export CSV</span>
+                    <span className="sm:hidden">CSV</span>
                   </button>
                   <button
                     onClick={handleDownloadPDF}
-                    className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors shadow-sm"
+                    className="flex items-center gap-2 px-3 lg:px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors shadow-sm text-sm lg:text-base"
                   >
                     <MdFileDownload />
-                    Export PDF
+                    <span className="hidden sm:inline">Export PDF</span>
+                    <span className="sm:hidden">PDF</span>
                   </button>
                 </>
               )}
@@ -1247,22 +1627,33 @@ const AdminDashboard = () => {
 
           {/* Tables Section */}
           <div className="space-y-8">
+            {activeTab === 'Dashboard' && (
+              <AdminAnalyticsDashboard />
+            )}
+            
             {activeTab === 'Manage Products' && (
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="p-6 border-b border-gray-100 flex flex-wrap items-center justify-between gap-4">
-                  <h4 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                    <MdList className="text-slate-900" />
-                    Inventory Overview
-                  </h4>
-                  <div className="relative max-w-xs w-full">
-                    <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search products..."
-                      className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition-all"
-                    />
+                <div className="p-6 border-b border-gray-100">
+                  <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+                    <h4 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                      <MdList className="text-slate-900" />
+                      Inventory Overview
+                      {selectedProducts.size > 0 && (
+                        <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                          {selectedProducts.size} selected
+                        </span>
+                      )}
+                    </h4>
+                    <div className="relative max-w-xs w-full">
+                      <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                      <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search products..."
+                        className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition-all"
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -1272,10 +1663,40 @@ const AdminDashboard = () => {
                     <p className="text-gray-500 font-medium">Loading inventory...</p>
                   </div>
                 ) : (
+                  <>
+                    {selectedProducts.size > 0 && (
+                      <div className="px-6 py-3 bg-blue-50 border-b border-blue-200 flex items-center justify-between">
+                        <span className="text-sm font-medium text-blue-900">
+                          {selectedProducts.size} product(s) selected
+                        </span>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setSelectedProducts(new Set())}
+                            className="px-3 py-1 text-sm text-blue-700 hover:bg-blue-100 rounded-lg transition-colors"
+                          >
+                            Clear Selection
+                          </button>
+                          <button
+                            onClick={handleBulkDeleteProducts}
+                            className="px-3 py-1 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                          >
+                            Delete Selected
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   <div className="overflow-x-auto">
                     <table className="w-full text-left">
                       <thead>
                         <tr className="bg-gray-50 text-gray-500 text-xs font-bold uppercase tracking-wider">
+                          <th className="px-6 py-4 w-12">
+                            <input
+                              type="checkbox"
+                              checked={selectedProducts.size === products.length && products.length > 0}
+                              onChange={handleSelectAllProducts}
+                              className="w-4 h-4 text-slate-900 border-gray-300 rounded focus:ring-slate-900"
+                            />
+                          </th>
                           <th className="px-6 py-4">Image</th>
                           <th className="px-6 py-4">Name</th>
                           <th className="px-6 py-4">Brand</th>
@@ -1292,7 +1713,7 @@ const AdminDashboard = () => {
                           return (p.name || '').toLowerCase().includes(q) || (p.brand || '').toLowerCase().includes(q);
                         }).length === 0 ? (
                           <tr>
-                            <td colSpan="6" className="px-6 py-20 text-center">
+                            <td colSpan="8" className="px-6 py-20 text-center">
                               <div className="flex flex-col items-center gap-2 text-gray-400">
                                 <MdList className="w-12 h-12" />
                                 <p className="font-medium text-lg">No products found</p>
@@ -1312,7 +1733,15 @@ const AdminDashboard = () => {
                             const finalOutOfStock = product.isOutOfStock || allSizesOut;
                             
                             return (
-                              <tr key={product.id} className="hover:bg-gray-50 transition-colors group">
+                              <tr key={product.id} className={`hover:bg-gray-50 transition-colors group ${selectedProducts.has(product.id) ? 'bg-blue-50' : ''}`}>
+                                <td className="px-6 py-4">
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedProducts.has(product.id)}
+                                    onChange={() => handleSelectProduct(product.id)}
+                                    className="w-4 h-4 text-slate-900 border-gray-300 rounded focus:ring-slate-900"
+                                  />
+                                </td>
                                 <td className="px-6 py-4">
                                   <img
                                     src={(Array.isArray(product.sizes) && product.sizes.find(s => s.size === '50ml' && Array.isArray(s.images) && s.images[0])?.images?.[0])
@@ -1385,6 +1814,7 @@ const AdminDashboard = () => {
                       </tbody>
                     </table>
                   </div>
+                  </>
                 )}
               </div>
             )}
@@ -1496,66 +1926,179 @@ const AdminDashboard = () => {
             {activeTab === 'Orders' && (
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="p-6 border-b border-gray-100">
-                  <h4 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                    <MdReceipt className="text-slate-900" />
-                    Order History
-                  </h4>
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    <h4 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                      <MdReceipt className="text-slate-900" />
+                      Order History
+                      {selectedOrders.size > 0 && (
+                        <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                          {selectedOrders.size} selected
+                        </span>
+                      )}
+                    </h4>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      {/* Date Filter */}
+                      <div className="flex gap-2">
+                        <select
+                          value={orderDateFilter}
+                          onChange={(e) => {
+                            setOrderDateFilter(e.target.value);
+                            setSelectedOrders(new Set());
+                          }}
+                          className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                        >
+                          <option value="all">All Orders</option>
+                          <option value="today">Today</option>
+                          <option value="weekly">This Week</option>
+                          <option value="monthly">This Month</option>
+                          <option value="yearly">This Year</option>
+                          <option value="custom">Custom Range</option>
+                        </select>
+                        
+                        {orderDateFilter === 'custom' && (
+                          <div className="flex gap-2">
+                            <input
+                              type="date"
+                              value={orderDateRange.start}
+                              onChange={(e) => setOrderDateRange(prev => ({ ...prev, start: e.target.value }))}
+                              className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                              placeholder="Start Date"
+                            />
+                            <input
+                              type="date"
+                              value={orderDateRange.end}
+                              onChange={(e) => setOrderDateRange(prev => ({ ...prev, end: e.target.value }))}
+                              className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                              placeholder="End Date"
+                            />
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Export Options */}
+                      <div className="flex gap-2">
+                        <button
+                          onClick={exportOrdersToCSV}
+                          className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
+                        >
+                          Export CSV
+                        </button>
+                        <button
+                          onClick={exportOrdersToPDF}
+                          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
+                        >
+                          Export PDF
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 {isOrdersLoading ? (
                   <div className="flex items-center justify-center py-20">
                     <div className="w-10 h-10 border-4 border-slate-200 border-t-slate-900 rounded-full animate-spin"></div>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                      <thead>
-                        <tr className="bg-gray-50 text-gray-500 text-xs font-bold uppercase tracking-wider">
-                          <th className="px-6 py-4">Order ID</th>
-                          <th className="px-6 py-4">Customer</th>
-                          <th className="px-6 py-4">Total</th>
-                          <th className="px-6 py-4">Status</th>
-                          <th className="px-6 py-4">Date</th>
-                          <th className="px-6 py-4 text-right">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {orders.length === 0 ? (
-                          <tr>
-                            <td colSpan="6" className="px-6 py-10 text-center text-gray-400 italic">No orders found</td>
+                  <>
+                    {selectedOrders.size > 0 && (
+                      <div className="px-6 py-3 bg-blue-50 border-b border-blue-200 flex items-center justify-between">
+                        <span className="text-sm font-medium text-blue-900">
+                          {selectedOrders.size} order(s) selected
+                        </span>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setSelectedOrders(new Set())}
+                            className="px-3 py-1 text-sm text-blue-700 hover:bg-blue-100 rounded-lg transition-colors"
+                          >
+                            Clear Selection
+                          </button>
+                          <button
+                            onClick={handleBulkDeleteOrders}
+                            className="px-3 py-1 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                          >
+                            Delete Selected
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left">
+                        <thead>
+                          <tr className="bg-gray-50 text-gray-500 text-xs font-bold uppercase tracking-wider">
+                            <th className="px-6 py-4 w-12">
+                              <input
+                                type="checkbox"
+                                checked={selectedOrders.size === filterOrdersByDate(orders).length && filterOrdersByDate(orders).length > 0}
+                                onChange={handleSelectAllOrders}
+                                className="w-4 h-4 text-slate-900 border-gray-300 rounded focus:ring-slate-900"
+                              />
+                            </th>
+                            <th className="px-6 py-4">Order ID</th>
+                            <th className="px-6 py-4">Customer</th>
+                            <th className="px-6 py-4">Total</th>
+                            <th className="px-6 py-4">Status</th>
+                            <th className="px-6 py-4">Date</th>
+                            <th className="px-6 py-4 text-right">Actions</th>
                           </tr>
-                        ) : (
-                          orders.map(o => {
-                            const name = `${o?.customerInfo?.firstName || ''} ${o?.customerInfo?.lastName || ''}`.trim() || (o?.customerInfo?.email || 'Guest');
-                            return (
-                              <tr key={o.id} className="hover:bg-gray-50 transition-colors">
-                                <td className="px-6 py-4 font-mono text-xs text-slate-500">{o.id}</td>
-                                <td className="px-6 py-4 font-medium text-gray-800">{name}</td>
-                                <td className="px-6 py-4 font-bold text-gray-800">₹{formatPrice(o.total)}</td>
-                                <td className="px-6 py-4">
-                                  <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                                    o.status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                                  }`}>
-                                    {o.status || 'pending'}
-                                  </span>
-                                </td>
-                                <td className="px-6 py-4 text-gray-500 text-xs">
-                                  {o.createdAt?.seconds ? new Date(o.createdAt.seconds * 1000).toLocaleString() : '-'}
-                                </td>
-                                <td className="px-6 py-4 text-right">
-                                  <button 
-                                    onClick={() => handleDeleteOrder(o.id)}
-                                    className="p-2 text-red-400 hover:text-red-600 transition-colors"
-                                  >
-                                    <MdDelete className="w-5 h-5" />
-                                  </button>
-                                </td>
-                              </tr>
-                            );
-                          })
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {filterOrdersByDate(orders).length === 0 ? (
+                            <tr>
+                              <td colSpan="7" className="px-6 py-10 text-center text-gray-400 italic">
+                                {orderDateFilter === 'all' ? 'No orders found' : `No orders found for ${orderDateFilter} filter`}
+                              </td>
+                            </tr>
+                          ) : (
+                            filterOrdersByDate(orders).map(o => {
+                              const name = `${o?.customerInfo?.firstName || ''} ${o?.customerInfo?.lastName || ''}`.trim() || (o?.customerInfo?.email || 'Guest');
+                              return (
+                                <tr key={o.id} className={`hover:bg-gray-50 transition-colors ${selectedOrders.has(o.id) ? 'bg-blue-50' : ''}`}>
+                                  <td className="px-6 py-4">
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedOrders.has(o.id)}
+                                      onChange={() => handleSelectOrder(o.id)}
+                                      className="w-4 h-4 text-slate-900 border-gray-300 rounded focus:ring-slate-900"
+                                    />
+                                  </td>
+                                  <td className="px-6 py-4 font-mono text-xs text-slate-500">{o.id}</td>
+                                  <td className="px-6 py-4 font-medium text-gray-800">{name}</td>
+                                  <td className="px-6 py-4 font-bold text-gray-800">₹{formatPrice(o.total)}</td>
+                                  <td className="px-6 py-4">
+                                    <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                                      o.status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                    }`}>
+                                      {o.status || 'pending'}
+                                    </span>
+                                  </td>
+                                  <td className="px-6 py-4 text-gray-500 text-xs">
+                                    {o.createdAt?.seconds ? new Date(o.createdAt.seconds * 1000).toLocaleString() : '-'}
+                                  </td>
+                                  <td className="px-6 py-4 text-right">
+                                    <div className="flex gap-2 justify-end">
+                                      <button 
+                                        onClick={() => handleViewBill(o)}
+                                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                        title="View Bill"
+                                      >
+                                        <MdReceipt className="w-5 h-5" />
+                                      </button>
+                                      <button 
+                                        onClick={() => handleDeleteOrder(o.id)}
+                                        className="p-2 text-red-400 hover:text-red-600 transition-colors"
+                                        title="Delete Order"
+                                      >
+                                        <MdDelete className="w-5 h-5" />
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
                 )}
               </div>
             )}
@@ -1615,105 +2158,379 @@ const AdminDashboard = () => {
 
             {['Brands', 'Categories', 'Nodes'].includes(activeTab) && (
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-                  <h4 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                    {activeTab === 'Brands' && <HiBriefcase className="text-slate-900" />}
-                    {activeTab === 'Categories' && <HiOutlineViewColumns className="text-slate-900" />}
-                    {activeTab === 'Nodes' && <HiSparkles className="text-slate-900" />}
-                    Manage {activeTab}
-                  </h4>
-                  <div className="flex gap-2">
-                    <input 
-                      type="text" 
-                      placeholder={`Add new ${activeTab.slice(0, -1)}...`}
-                      className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-                      value={newMetadataVal}
-                      onChange={(e) => setNewMetadataVal(e.target.value)}
-                    />
-                    <button 
-                      onClick={() => handleAddMetadata(activeTab, newMetadataVal)}
-                      disabled={isMetadataUpdating || !newMetadataVal.trim()}
-                      className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-bold hover:bg-slate-800 disabled:bg-slate-300 transition-colors"
-                    >
-                      Add
-                    </button>
+                <div className="p-6 border-b border-gray-100">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <h4 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                      {activeTab === 'Brands' && <HiBriefcase className="text-slate-900" />}
+                      {activeTab === 'Categories' && <HiOutlineViewColumns className="text-slate-900" />}
+                      {activeTab === 'Nodes' && <HiSparkles className="text-slate-900" />}
+                      Manage {activeTab}
+                      {selectedMetadata.size > 0 && (
+                        <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                          {selectedMetadata.size} selected
+                        </span>
+                      )}
+                    </h4>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <div className="flex gap-2">
+                        <input 
+                          type="text" 
+                          placeholder={`Add new ${activeTab.slice(0, -1)}...`}
+                          className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                          value={newMetadataVal}
+                          onChange={(e) => setNewMetadataVal(e.target.value)}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              handleAddMetadata(activeTab, newMetadataVal);
+                            }
+                          }}
+                        />
+                        <button 
+                          onClick={() => handleAddMetadata(activeTab, newMetadataVal)}
+                          disabled={isMetadataUpdating || !newMetadataVal.trim()}
+                          className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-bold hover:bg-slate-800 disabled:bg-slate-300 transition-colors"
+                        >
+                          Add
+                        </button>
+                      </div>
+                      <select
+                        value={itemsPerPage}
+                        onChange={(e) => {
+                          setItemsPerPage(Number(e.target.value));
+                          setMetadataPage(1);
+                        }}
+                        className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                      >
+                        <option value={10}>10 per page</option>
+                        <option value={15}>15 per page</option>
+                        <option value={20}>20 per page</option>
+                        <option value={50}>50 per page</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
-                <div className="p-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {(() => {
-                      const fieldMap = { 'Brands': 'brands', 'Categories': 'categories', 'Nodes': 'notes' };
-                      const baseMap = { 
-                        'Brands': baseBrands, 
-                        'Categories': ['Designer', 'Middle eastern', 'niche', 'Vials', 'Gift sets', 'Combo'], 
-                        'Nodes': basePerfumeNotes 
-                      };
-                      const field = fieldMap[activeTab];
-                      const deletedField = `deleted_${field}`;
-                      const customItems = customLists[field] || [];
-                      const deletedItems = customLists[deletedField] || [];
-                      const baseItems = baseMap[activeTab].filter(item => !deletedItems.includes(item));
-                      
-                      // Combine and mark base items
-                      const allItems = [
-                        ...baseItems.map(item => ({ val: item, isBase: true })),
-                        ...customItems.map(item => ({ val: item, isBase: false }))
-                      ].sort((a, b) => a.val.localeCompare(b.val));
+                
+                {selectedMetadata.size > 0 && (
+                  <div className="px-6 py-3 bg-blue-50 border-b border-blue-200 flex items-center justify-between">
+                    <span className="text-sm font-medium text-blue-900">
+                      {selectedMetadata.size} {activeTab.toLowerCase()} item(s) selected
+                    </span>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setSelectedMetadata(new Set())}
+                        className="px-3 py-1 text-sm text-blue-700 hover:bg-blue-100 rounded-lg transition-colors"
+                      >
+                        Clear Selection
+                      </button>
+                      <button
+                        onClick={handleBulkDeleteMetadata}
+                        className="px-3 py-1 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                      >
+                        Delete Selected
+                      </button>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                      <tr>
+                        <th className="px-6 py-4 w-12">
+                          <input
+                            type="checkbox"
+                            checked={(() => {
+                              const fieldMap = { 'Brands': 'brands', 'Categories': 'categories', 'Nodes': 'notes' };
+                              const baseMap = { 
+                                'Brands': baseBrands, 
+                                'Categories': ['Designer', 'Middle eastern', 'niche', 'Vials', 'Gift sets', 'Combo'], 
+                                'Nodes': basePerfumeNotes 
+                              };
+                              if (!['Brands', 'Categories', 'Nodes'].includes(activeTab)) return false;
+                              
+                              const field = fieldMap[activeTab];
+                              const deletedField = `deleted_${field}`;
+                              const customItems = customLists[field] || [];
+                              const deletedItems = customLists[deletedField] || [];
+                              const baseItems = baseMap[activeTab].filter(item => !deletedItems.includes(item));
+                              
+                              const allItems = [
+                                ...baseItems.map(item => item),
+                                ...customItems.map(item => item)
+                              ].sort((a, b) => a.localeCompare(b));
+                              
+                              return selectedMetadata.size === allItems.length && allItems.length > 0;
+                            })()}
+                            onChange={handleSelectAllMetadata}
+                            className="w-4 h-4 text-slate-900 border-gray-300 rounded focus:ring-slate-900"
+                          />
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                          {activeTab.slice(0, -1)} Name
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                          Type
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                          Products
+                        </th>
+                        <th className="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {(() => {
+                        const fieldMap = { 'Brands': 'brands', 'Categories': 'categories', 'Nodes': 'notes' };
+                        const baseMap = { 
+                          'Brands': baseBrands, 
+                          'Categories': ['Designer', 'Middle eastern', 'niche', 'Vials', 'Gift sets', 'Combo'], 
+                          'Nodes': basePerfumeNotes 
+                        };
+                        const field = fieldMap[activeTab];
+                        const deletedField = `deleted_${field}`;
+                        const customItems = customLists[field] || [];
+                        const deletedItems = customLists[deletedField] || [];
+                        const baseItems = baseMap[activeTab].filter(item => !deletedItems.includes(item));
+                        
+                        // Combine and mark base items
+                        const allItems = [
+                          ...baseItems.map(item => ({ val: item, isBase: true })),
+                          ...customItems.map(item => ({ val: item, isBase: false }))
+                        ].sort((a, b) => a.val.localeCompare(b.val));
 
-                      return allItems.map(({ val, isBase }) => (
-                        <div key={val} className="p-4 bg-gray-50 rounded-xl border border-gray-200 flex items-center justify-between group hover:bg-white hover:shadow-md transition-all">
-                          <div className="flex items-center gap-3 overflow-hidden">
-                            <div className="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xs shrink-0">
-                              {val.charAt(0)}
-                            </div>
-                            {editingMetadata?.type === activeTab && editingMetadata?.oldVal === val ? (
-                              <input 
-                                autoFocus
-                                className="text-xs font-bold text-slate-900 uppercase tracking-tight bg-white border border-slate-300 rounded px-1 w-full"
-                                value={editingMetadata.newVal}
-                                onChange={(e) => setEditingMetadata({ ...editingMetadata, newVal: e.target.value })}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') handleUpdateMetadata(activeTab, val, editingMetadata.newVal);
-                                  if (e.key === 'Escape') setEditingMetadata(null);
-                                }}
-                              />
-                            ) : (
-                              <div className="flex flex-col overflow-hidden">
-                                <p className="text-xs font-bold text-slate-900 uppercase tracking-tight truncate">{val}</p>
-                                <span className="text-[9px] text-gray-400 font-bold uppercase">
-                                  {isBase ? 'System' : 'Custom'} • {products.filter(p => (activeTab === 'Brands' ? p.brand : (activeTab === 'Categories' ? p.badge : p.note)) === val).length} Items
+                        // Pagination logic
+                        const totalPages = Math.ceil(allItems.length / itemsPerPage);
+                        const startIndex = (metadataPage - 1) * itemsPerPage;
+                        const endIndex = startIndex + itemsPerPage;
+                        const currentItems = allItems.slice(startIndex, endIndex);
+
+                        if (currentItems.length === 0) {
+                          return (
+                            <tr>
+                              <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
+                                <div className="flex flex-col items-center gap-2">
+                                  <HiOutlineViewColumns className="w-12 h-12 text-gray-300" />
+                                  <p>No {activeTab.toLowerCase()} found</p>
+                                  <p className="text-sm">Add your first {activeTab.slice(0, -1)} to get started</p>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        }
+
+                        return currentItems.map(({ val, isBase }) => {
+                          const productCount = products.filter(p => 
+                            (activeTab === 'Brands' ? p.brand : (activeTab === 'Categories' ? p.badge : p.note)) === val
+                          ).length;
+
+                          return (
+                            <tr key={val} className={`hover:bg-gray-50 transition-colors ${selectedMetadata.has(val) ? 'bg-blue-50' : ''}`}>
+                              <td className="px-6 py-4">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedMetadata.has(val)}
+                                  onChange={() => handleSelectMetadata(val)}
+                                  className="w-4 h-4 text-slate-900 border-gray-300 rounded focus:ring-slate-900"
+                                />
+                              </td>
+                              <td className="px-6 py-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
+                                    <span className="text-slate-900 font-bold text-sm uppercase">
+                                      {val.charAt(0)}
+                                    </span>
+                                  </div>
+                                  {editingMetadata?.type === activeTab && editingMetadata?.oldVal === val ? (
+                                    <input 
+                                      autoFocus
+                                      className="px-3 py-2 border border-slate-300 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-slate-900"
+                                      value={editingMetadata.newVal}
+                                      onChange={(e) => setEditingMetadata({ ...editingMetadata, newVal: e.target.value })}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          handleUpdateMetadata(activeTab, val, editingMetadata.newVal);
+                                        }
+                                        if (e.key === 'Escape') {
+                                          setEditingMetadata(null);
+                                        }
+                                      }}
+                                    />
+                                  ) : (
+                                    <div>
+                                      <p className="font-medium text-gray-800 capitalize">{val}</p>
+                                      {activeTab === 'Brands' && (
+                                        <p className="text-sm text-gray-500">Brand</p>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4">
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                  isBase 
+                                    ? 'bg-blue-100 text-blue-800' 
+                                    : 'bg-purple-100 text-purple-800'
+                                }`}>
+                                  {isBase ? 'System' : 'Custom'}
                                 </span>
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            {editingMetadata?.type === activeTab && editingMetadata?.oldVal === val ? (
-                              <button 
-                                onClick={() => handleUpdateMetadata(activeTab, val, editingMetadata.newVal)}
-                                className="p-1.5 text-green-600 hover:bg-green-50 rounded transition-colors"
-                              >
-                                <MdCheckCircle className="w-4 h-4" />
-                              </button>
-                            ) : (
-                              <button 
-                                onClick={() => setEditingMetadata({ type: activeTab, oldVal: val, newVal: val })}
-                                className="p-1.5 text-slate-600 hover:bg-slate-100 rounded transition-colors"
-                              >
-                                <MdEdit className="w-4 h-4" />
-                              </button>
-                            )}
-                            <button 
-                              onClick={() => handleDeleteMetadata(activeTab, val)}
-                              className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
-                            >
-                              <MdDelete className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      ));
-                    })()}
-                  </div>
+                              </td>
+                              <td className="px-6 py-4">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-medium text-gray-900">{productCount}</span>
+                                  <span className="text-xs text-gray-500">items</span>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 text-center">
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                  productCount > 0 
+                                    ? 'bg-green-100 text-green-800' 
+                                    : 'bg-gray-100 text-gray-800'
+                                }`}>
+                                  {productCount > 0 ? 'Active' : 'Empty'}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-right">
+                                <div className="flex items-center justify-end gap-1">
+                                  {editingMetadata?.type === activeTab && editingMetadata?.oldVal === val ? (
+                                    <>
+                                      <button 
+                                        onClick={() => handleUpdateMetadata(activeTab, val, editingMetadata.newVal)}
+                                        className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                                        title="Save"
+                                      >
+                                        <MdCheckCircle className="w-4 h-4" />
+                                      </button>
+                                      <button 
+                                        onClick={() => setEditingMetadata(null)}
+                                        className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                                        title="Cancel"
+                                      >
+                                        <MdClose className="w-4 h-4" />
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <button 
+                                        onClick={() => setEditingMetadata({ type: activeTab, oldVal: val, newVal: val })}
+                                        className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                                        title="Edit"
+                                      >
+                                        <MdEdit className="w-4 h-4" />
+                                      </button>
+                                      <button 
+                                        onClick={() => handleDeleteMetadata(activeTab, val)}
+                                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                        title="Delete"
+                                      >
+                                        <MdDelete className="w-4 h-4" />
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        });
+                      })()}
+                    </tbody>
+                  </table>
                 </div>
+
+                {/* Pagination */}
+                {(() => {
+                  const fieldMap = { 'Brands': 'brands', 'Categories': 'categories', 'Nodes': 'notes' };
+                  const baseMap = { 
+                    'Brands': baseBrands, 
+                    'Categories': ['Designer', 'Middle eastern', 'niche', 'Vials', 'Gift sets', 'Combo'], 
+                    'Nodes': basePerfumeNotes 
+                  };
+                  const field = fieldMap[activeTab];
+                  const deletedField = `deleted_${field}`;
+                  const customItems = customLists[field] || [];
+                  const deletedItems = customLists[deletedField] || [];
+                  const baseItems = baseMap[activeTab].filter(item => !deletedItems.includes(item));
+                  
+                  const allItems = [
+                    ...baseItems.map(item => ({ val: item, isBase: true })),
+                    ...customItems.map(item => ({ val: item, isBase: false }))
+                  ].sort((a, b) => a.val.localeCompare(b.val));
+
+                  const totalPages = Math.ceil(allItems.length / itemsPerPage);
+                  
+                  if (totalPages <= 1) return null;
+
+                  return (
+                    <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+                      <div className="text-sm text-gray-700">
+                        Showing {((metadataPage - 1) * itemsPerPage) + 1} to {Math.min(metadataPage * itemsPerPage, allItems.length)} of {allItems.length} {activeTab.toLowerCase()}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setMetadataPage(1)}
+                          disabled={metadataPage === 1}
+                          className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-l-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          First
+                        </button>
+                        <button
+                          onClick={() => setMetadataPage(Math.max(1, metadataPage - 1))}
+                          disabled={metadataPage === 1}
+                          className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border-t border-b border-l border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Previous
+                        </button>
+                        
+                        <div className="flex items-center">
+                          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                            let pageNum;
+                            if (totalPages <= 5) {
+                              pageNum = i + 1;
+                            } else if (metadataPage <= 3) {
+                              pageNum = i + 1;
+                            } else if (metadataPage >= totalPages - 2) {
+                              pageNum = totalPages - 4 + i;
+                            } else {
+                              pageNum = metadataPage - 2 + i;
+                            }
+                            
+                            return (
+                              <button
+                                key={pageNum}
+                                onClick={() => setMetadataPage(pageNum)}
+                                className={`px-4 py-2 text-sm font-medium border-t border-b border-l border-gray-300 ${
+                                  metadataPage === pageNum
+                                    ? 'bg-slate-900 text-white'
+                                    : 'text-gray-500 bg-white hover:bg-gray-50'
+                                }`}
+                              >
+                                {pageNum}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        
+                        <button
+                          onClick={() => setMetadataPage(Math.min(totalPages, metadataPage + 1))}
+                          disabled={metadataPage === totalPages}
+                          className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border-t border-b border-l border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Next
+                        </button>
+                        <button
+                          onClick={() => setMetadataPage(totalPages)}
+                          disabled={metadataPage === totalPages}
+                          className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-r-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Last
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             )}
 
@@ -2316,6 +3133,290 @@ const AdminDashboard = () => {
               autoPlay
               playsInline
             />
+          </div>
+        </div>
+      )}
+
+      {/* Bill Modal */}
+      {showBillModal && (
+        <BillTemplate 
+          order={selectedOrder} 
+          onClose={handleCloseBillModal}
+        />
+      )}
+
+      {/* Admin Profile Modal */}
+      {showProfileModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowProfileModal(false)}></div>
+          <div className="relative bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden">
+            <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between bg-slate-900 text-white">
+              <div>
+                <h4 className="text-xl font-bold tracking-tight">Edit Profile</h4>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Account Settings</p>
+              </div>
+              <button onClick={() => setShowProfileModal(false)} className="text-slate-400 hover:text-white transition-colors">
+                <MdClose className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="p-8">
+              <div className="space-y-6">
+                {/* Profile Picture */}
+                <div className="flex items-center gap-6">
+                  <div className="relative">
+                    {adminProfile.avatar ? (
+                      <img src={adminProfile.avatar} alt="Profile" className="w-20 h-20 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center">
+                        <HiUserCircle className="w-12 h-12 text-gray-400" />
+                      </div>
+                    )}
+                    <button className="absolute bottom-0 right-0 p-2 bg-slate-900 text-white rounded-full hover:bg-slate-800 transition-colors">
+                      <MdEdit className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div>
+                    <h5 className="text-lg font-semibold text-gray-800">{adminProfile.name}</h5>
+                    <p className="text-sm text-gray-500">{adminProfile.role}</p>
+                  </div>
+                </div>
+
+                {/* Profile Form */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                    <input
+                      type="text"
+                      value={adminProfile.name}
+                      onChange={(e) => setAdminProfile(prev => ({ ...prev, name: e.target.value }))}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input
+                      type="email"
+                      value={adminProfile.email}
+                      onChange={(e) => setAdminProfile(prev => ({ ...prev, email: e.target.value }))}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                    <input
+                      type="tel"
+                      value={adminProfile.phone}
+                      onChange={(e) => setAdminProfile(prev => ({ ...prev, phone: e.target.value }))}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                    <select
+                      value={adminProfile.role}
+                      onChange={(e) => setAdminProfile(prev => ({ ...prev, role: e.target.value }))}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900"
+                    >
+                      <option value="Super Admin">Super Admin</option>
+                      <option value="Admin">Admin</option>
+                      <option value="Manager">Manager</option>
+                      <option value="Editor">Editor</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="px-8 py-6 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+              <button
+                onClick={() => setShowProfileModal(false)}
+                className="px-6 py-2.5 text-sm font-bold text-gray-600 hover:text-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => setShowProfileModal(false)}
+                className="px-8 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-sm font-bold shadow-lg shadow-slate-100 transition-all"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Admin Settings Modal */}
+      {showSettingsModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowSettingsModal(false)}></div>
+          <div className="relative bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden">
+            <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between bg-slate-900 text-white">
+              <div>
+                <h4 className="text-xl font-bold tracking-tight">Admin Settings</h4>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">System Configuration</p>
+              </div>
+              <button onClick={() => setShowSettingsModal(false)} className="text-slate-400 hover:text-white transition-colors">
+                <MdClose className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="p-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Appearance Settings */}
+                <div className="space-y-6">
+                  <div>
+                    <h5 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                      <MdDarkMode className="w-5 h-5" />
+                      Appearance
+                    </h5>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-gray-800">Dark Mode</p>
+                          <p className="text-sm text-gray-500">Enable dark theme for the admin panel</p>
+                        </div>
+                        <button
+                          onClick={() => setAdminProfile(prev => ({ ...prev, darkMode: !prev.darkMode }))}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            adminProfile.darkMode ? 'bg-slate-900' : 'bg-gray-200'
+                          }`}
+                        >
+                          <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            adminProfile.darkMode ? 'translate-x-6' : 'translate-x-1'
+                          }`} />
+                        </button>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Language</label>
+                        <select
+                          value={adminProfile.language}
+                          onChange={(e) => setAdminProfile(prev => ({ ...prev, language: e.target.value }))}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900"
+                        >
+                          <option value="en">English</option>
+                          <option value="hi">Hindi</option>
+                          <option value="gu">Gujarati</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Notification Settings */}
+                  <div>
+                    <h5 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                      <MdNotifications className="w-5 h-5" />
+                      Notifications
+                    </h5>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-gray-800">Email Notifications</p>
+                          <p className="text-sm text-gray-500">Receive email alerts for new orders</p>
+                        </div>
+                        <button
+                          onClick={() => setAdminProfile(prev => ({ ...prev, notifications: !prev.notifications }))}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            adminProfile.notifications ? 'bg-slate-900' : 'bg-gray-200'
+                          }`}
+                        >
+                          <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            adminProfile.notifications ? 'translate-x-6' : 'translate-x-1'
+                          }`} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Data Management */}
+                <div className="space-y-6">
+                  <div>
+                    <h5 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                      <MdBackup className="w-5 h-5" />
+                      Data Management
+                    </h5>
+                    <div className="space-y-3">
+                      <button className="w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <MdBackup className="w-5 h-5 text-blue-600" />
+                          <div>
+                            <p className="font-medium text-gray-800">Backup Data</p>
+                            <p className="text-sm text-gray-500">Export all data to backup file</p>
+                          </div>
+                        </div>
+                        <span className="text-blue-600">→</span>
+                      </button>
+                      <button className="w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <MdRestore className="w-5 h-5 text-green-600" />
+                          <div>
+                            <p className="font-medium text-gray-800">Restore Data</p>
+                            <p className="text-sm text-gray-500">Import data from backup file</p>
+                          </div>
+                        </div>
+                        <span className="text-green-600">→</span>
+                      </button>
+                      <button className="w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <MdFileDownload className="w-5 h-5 text-purple-600" />
+                          <div>
+                            <p className="font-medium text-gray-800">Export Reports</p>
+                            <p className="text-sm text-gray-500">Download detailed reports</p>
+                          </div>
+                        </div>
+                        <span className="text-purple-600">→</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Security Settings */}
+                  <div>
+                    <h5 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                      <MdSecurity className="w-5 h-5" />
+                      Security
+                    </h5>
+                    <div className="space-y-3">
+                      <button className="w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <MdSecurity className="w-5 h-5 text-red-600" />
+                          <div>
+                            <p className="font-medium text-gray-800">Change Password</p>
+                            <p className="text-sm text-gray-500">Update your account password</p>
+                          </div>
+                        </div>
+                        <span className="text-red-600">→</span>
+                      </button>
+                      <button className="w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <MdPerson className="w-5 h-5 text-orange-600" />
+                          <div>
+                            <p className="font-medium text-gray-800">Access Logs</p>
+                            <p className="text-sm text-gray-500">View login activity</p>
+                          </div>
+                        </div>
+                        <span className="text-orange-600">→</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="px-8 py-6 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+              <button
+                onClick={() => setShowSettingsModal(false)}
+                className="px-6 py-2.5 text-sm font-bold text-gray-600 hover:text-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => setShowSettingsModal(false)}
+                className="px-8 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-sm font-bold shadow-lg shadow-slate-100 transition-all"
+              >
+                Save Settings
+              </button>
+            </div>
           </div>
         </div>
       )}
